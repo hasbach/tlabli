@@ -1,0 +1,191 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   Tlabli design tokens
+   Source: ui-ux-pro-max design-system research (see /design-system/tlabli/MASTER.md)
+   Default theme = brand shell used by the marketing site + owner dashboard.
+   Each public menu template (.theme-*) overrides tokens to give every
+   restaurant type its own distinct, appetizing identity.
+   ========================================================================== */
+
+:root {
+  --background: #ffffff;
+  --foreground: #241608;
+
+  --card: #ffffff;
+  --card-foreground: #241608;
+
+  --popover: #ffffff;
+  --popover-foreground: #241608;
+
+  --primary: #d6472e;
+  --primary-foreground: #ffffff;
+
+  --secondary: #f2a73b;
+  --secondary-foreground: #241608;
+
+  --muted: #f6f1ec;
+  --muted-foreground: #6b5b4d;
+
+  --accent: #fbefe4;
+  --accent-foreground: #241608;
+
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  --success: #16a34a;
+  --success-foreground: #ffffff;
+
+  --border: #eae1d8;
+  --input: #eae1d8;
+  --ring: #d6472e;
+
+  --radius: 0.9rem;
+}
+
+/* Fast Food & Snacks — bold, energetic, red/gold, blocky rounded */
+.theme-fast-food {
+  --background: #fff8f0;
+  --foreground: #3a0a0a;
+  --card: #ffffff;
+  --card-foreground: #3a0a0a;
+  --popover: #ffffff;
+  --popover-foreground: #3a0a0a;
+  --primary: #dc2626;
+  --primary-foreground: #ffffff;
+  --secondary: #fbbf24;
+  --secondary-foreground: #3a0a0a;
+  --muted: #ffedd5;
+  --muted-foreground: #7c2d12;
+  --accent: #fee2e2;
+  --accent-foreground: #3a0a0a;
+  --border: #fed7aa;
+  --input: #fed7aa;
+  --ring: #dc2626;
+  --radius: 1.25rem;
+}
+
+/* Bakery & Small Business — warm, cozy, soft claymorphism-lite */
+.theme-bakery {
+  --background: #fef3c7;
+  --foreground: #78350f;
+  --card: #ffffff;
+  --card-foreground: #78350f;
+  --popover: #ffffff;
+  --popover-foreground: #78350f;
+  --primary: #92400e;
+  --primary-foreground: #ffffff;
+  --secondary: #fdbcb4;
+  --secondary-foreground: #78350f;
+  --muted: #fde9c8;
+  --muted-foreground: #9a6b3d;
+  --accent: #fde68a;
+  --accent-foreground: #78350f;
+  --border: #fde68a;
+  --input: #fde68a;
+  --ring: #92400e;
+  --radius: 1.5rem;
+}
+
+/* Fine Dining — elegant, minimal, black + gold */
+.theme-fine-dining {
+  --background: #fafaf9;
+  --foreground: #0c0a09;
+  --card: #ffffff;
+  --card-foreground: #0c0a09;
+  --popover: #ffffff;
+  --popover-foreground: #0c0a09;
+  --primary: #1c1917;
+  --primary-foreground: #ffffff;
+  --secondary: #a16207;
+  --secondary-foreground: #ffffff;
+  --muted: #f5f5f4;
+  --muted-foreground: #57534e;
+  --accent: #f5f0e6;
+  --accent-foreground: #1c1917;
+  --border: #e7e5e4;
+  --input: #e7e5e4;
+  --ring: #1c1917;
+  --radius: 0.25rem;
+}
+
+/* Cafe — earthy, artisan, terracotta + cream */
+.theme-cafe {
+  --background: #f5f0e1;
+  --foreground: #4a2e1e;
+  --card: #ffffff;
+  --card-foreground: #4a2e1e;
+  --popover: #ffffff;
+  --popover-foreground: #4a2e1e;
+  --primary: #b5651d;
+  --primary-foreground: #ffffff;
+  --secondary: #c67b5c;
+  --secondary-foreground: #ffffff;
+  --muted: #efe6d3;
+  --muted-foreground: #7a5c43;
+  --accent: #e7d9be;
+  --accent-foreground: #4a2e1e;
+  --border: #dccba8;
+  --input: #dccba8;
+  --ring: #b5651d;
+  --radius: 0.875rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Never remove focus rings — keyboard navigation must stay visible. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* Respect reduced-motion preferences. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* RTL support for Arabic storefronts */
+[dir="rtl"] {
+  text-align: right;
+}
+
+[dir="rtl"] .flip-rtl {
+  transform: scaleX(-1);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--primary) 25%, transparent);
+}
+
+/* Thin, warm scrollbars for the owner dashboard */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
