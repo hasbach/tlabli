@@ -9,6 +9,8 @@ import type {
   Order,
   AnalyticsSnapshot,
   Driver,
+  Subscription,
+  StaffUser,
 } from "./types";
 
 export const restaurants: Restaurant[] = [
@@ -120,6 +122,45 @@ export const restaurants: Restaurant[] = [
     phone: "+96178456789",
     address: "Gemmayze, Beirut",
   },
+];
+
+export const subscriptions: Subscription[] = [
+  {
+    id: "sub-fastfood",
+    restaurantId: "r-fastfood",
+    periodStart: "2026-07-15",
+    periodEnd: "2026-08-15",
+    paymentProofRef: "OMT ref #48213",
+  },
+  {
+    id: "sub-bakery",
+    restaurantId: "r-bakery",
+    periodStart: "2026-07-01",
+    periodEnd: "2026-08-01",
+  },
+  {
+    id: "sub-finedining",
+    restaurantId: "r-finedining",
+    periodStart: "2026-07-01",
+    periodEnd: "2026-08-01",
+    paymentProofRef: "Whish Money ref #77410",
+  },
+  {
+    id: "sub-cafe",
+    restaurantId: "r-cafe",
+    periodStart: "2026-07-20",
+    periodEnd: "2026-08-20",
+  },
+];
+
+export const staffUsers: StaffUser[] = [
+  { id: "st-fastfood-owner", restaurantId: "r-fastfood", name: "Rami Abou Chacra", phone: "+96170123456", role: "owner" },
+  { id: "st-fastfood-1", restaurantId: "r-fastfood", name: "Nadine Fares", phone: "+96171112233", role: "staff" },
+  { id: "st-fastfood-2", restaurantId: "r-fastfood", name: "Karim Haddad", phone: "+96176334455", role: "staff" },
+  { id: "st-bakery-owner", restaurantId: "r-bakery", name: "Sara Khalil", phone: "+96176234567", role: "owner" },
+  { id: "st-finedining-owner", restaurantId: "r-finedining", name: "Jean Nassar", phone: "+96181345678", role: "owner" },
+  { id: "st-finedining-1", restaurantId: "r-finedining", name: "Elie Matta", phone: "+96181556677", role: "staff" },
+  { id: "st-cafe-owner", restaurantId: "r-cafe", name: "Tarek Younes", phone: "+96178456789", role: "owner" },
 ];
 
 export const categories: MenuCategory[] = [
