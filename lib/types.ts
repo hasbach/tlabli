@@ -117,6 +117,24 @@ export interface PromoCode {
   active: boolean;
 }
 
+export interface Subscription {
+  id: string;
+  restaurantId: string;
+  periodStart: string;
+  periodEnd: string;
+  paymentProofRef?: string;
+}
+
+export type StaffRole = "owner" | "staff";
+
+export interface StaffUser {
+  id: string;
+  restaurantId: string;
+  name: string;
+  phone: string;
+  role: StaffRole;
+}
+
 export interface AnalyticsSnapshot {
   ordersToday: number;
   ordersThisWeek: number;
