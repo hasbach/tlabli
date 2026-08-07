@@ -29,7 +29,7 @@ export async function middleware(request: NextRequest) {
 
   if ((isDashboard || isAdmin) && !user) {
     const redirectResponse = NextResponse.redirect(new URL("/login", request.url));
-    response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie.name, cookie.value));
+    response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie));
     return redirectResponse;
   }
 
@@ -40,7 +40,7 @@ export async function middleware(request: NextRequest) {
       .filter(Boolean);
     if (!adminEmails.includes((user.email ?? "").trim().toLowerCase())) {
       const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.url));
-      response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie.name, cookie.value));
+      response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie));
       return redirectResponse;
     }
   }
