@@ -9,7 +9,7 @@
 -- one deliberate, narrow bypass: it creates both rows for the calling
 -- (already-authenticated) user in one transaction.
 
-create function create_restaurant_with_owner(
+create or replace function create_restaurant_with_owner(
   p_name text,
   p_slug text,
   p_type text,
@@ -25,6 +25,10 @@ declare
 begin
   if auth.uid() is null then
     raise exception 'not authenticated';
+  end if;
+
+  if p_slug is null or p_slug = '' then
+    raise exception 'slug must not be empty';
   end if;
 
   insert into public.restaurants (name, slug, type, template_id, whatsapp_number, phone)

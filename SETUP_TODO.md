@@ -21,16 +21,23 @@ can run against a real database and send real WhatsApp orders.
 3. Copy the project URL and anon key into `.env.local` (see `.env.example`),
    and set `PLATFORM_ADMIN_EMAILS` to your own email (comma-separated if
    more than one) so `/admin` recognizes you once you log in.
-4. `npm install` (already run for you if you're reading this after the auth
+4. In your Supabase project, go to Authentication → Providers → Email and
+   turn off "Confirm email." With it on, `supabase.auth.signUp()` won't
+   return a session until the user clicks a confirmation link, and the
+   signup flow (`/onboarding` step 4) needs a session immediately to create
+   the restaurant — leaving a real customer stuck. Turning this off matches
+   why email+password was chosen over magic link in the first place
+   (avoiding an email-checking step).
+5. `npm install` (already run for you if you're reading this after the auth
    sub-project's implementation — otherwise this installs
    `@supabase/supabase-js` and `@supabase/ssr`).
-5. Real login/signup now works: visit `/onboarding` to create your first
+6. Real login/signup now works: visit `/onboarding` to create your first
    real restaurant + owner account, or run
    `node --env-file=.env.local scripts/seed-staff-logins.mjs` (after also
    filling in `SUPABASE_SERVICE_ROLE_KEY`) to create real logins for the 7
    demo staff members already seeded in `04_seed.sql` — that script prints
    each email and the shared demo password when it finishes.
-6. Swap the mock reads in `lib/mock-data.ts` / `lib/menu.ts` for real Supabase
+7. Swap the mock reads in `lib/mock-data.ts` / `lib/menu.ts` for real Supabase
    queries — every place that needs this is marked with a
    `// TODO(supabase):` comment. `/dashboard`'s displayed data (menu, orders,
    analytics, settings) still shows mock data regardless of who's logged in
@@ -69,7 +76,7 @@ Per the pricing model in `PROJECT_INSTRUCTIONS.md`, billing is manual:
 
 1. Set up an OMT and/or Whish Money account to receive owner payments.
 2. Use the `/admin` panel to record payment confirmations and activate
-   accounts (mock data only for now — see section 1.6; the panel itself is
+   accounts (mock data only for now — see section 1.7; the panel itself is
    gated behind real login, see section 3).
 
 ## 5. Content
@@ -95,5 +102,5 @@ Per the pricing model in `PROJECT_INSTRUCTIONS.md`, billing is manual:
 - Real login (`/login`), signup (`/onboarding`), and logout — `/dashboard`
   and `/admin` are gated behind an authenticated session via `middleware.ts`,
   though `/dashboard`'s displayed data still shows mock data regardless of
-  who's logged in (see item 1.6 above).
+  who's logged in (see item 1.7 above).
 - Design system documented in `design-system/tlabli/MASTER.md`.

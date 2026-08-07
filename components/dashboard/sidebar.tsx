@@ -23,6 +23,7 @@ export function Sidebar() {
   async function handleLogout() {
     await supabase.auth.signOut();
     router.push("/login");
+    router.refresh();
   }
 
   return (
@@ -75,7 +76,7 @@ export function Sidebar() {
       </button>
 
       <div className="m-3 rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
-        Running on demo data. Connect Supabase to go live — see <span className="font-medium text-foreground">SETUP_TODO.md</span>.
+        This dashboard shows demo data for now, regardless of your login — see <span className="font-medium text-foreground">SETUP_TODO.md</span>.
       </div>
     </aside>
   );

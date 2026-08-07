@@ -37,30 +37,49 @@ export default function OnboardingPage() {
     setSubmitting(true);
     setError(null);
 
-    const { error: signUpError } = await supabase.auth.signUp({ email, password });
-    if (signUpError) {
-      setError(signUpError.message);
+    const { data: sessionData } = await supabase.auth.getSession();
+    let hasSession = Boolean(sessionData.session);
+
+    if (!hasSession) {
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
+      if (signUpError) {
+        setError(signUpError.message);
+        setSubmitting(false);
+        return;
+      }
+      hasSession = Boolean(signUpData.session);
+    }
+
+    if (!hasSession) {
+      setError("Check your email to confirm your account, then come back and try again.");
       setSubmitting(false);
       return;
     }
 
-    const slug = name
-      .toLowerCase()
+    const rawSlug = name
       .trim()
+      .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "");
+    const slug = rawSlug || `restaurant-${Date.now().toString(36)}`;
 
     const { error: rpcError } = await supabase.rpc("create_restaurant_with_owner", {
-      p_name: name,
+      p_name: name.trim(),
       p_slug: slug,
       p_type: selected.id,
-      p_whatsapp_number: whatsapp,
+      p_whatsapp_number: whatsapp.trim(),
     });
 
     setSubmitting(false);
 
     if (rpcError) {
-      setError(rpcError.message);
+      if (rpcError.code === "23505") {
+        setError("That business name is already taken — try a slightly different name.");
+      } else if (rpcError.code === "42501") {
+        setError("Your account isn't confirmed yet — check your email, then come back and try again.");
+      } else {
+        setError(rpcError.message);
+      }
       return;
     }
 
@@ -151,7 +170,7 @@ export default function OnboardingPage() {
               <Button variant="ghost" onClick={() => setStep(2)}>
                 <ArrowLeft className="h-4 w-4" /> Back
               </Button>
-              <Button disabled={!name || !whatsapp} onClick={() => setStep(4)}>
+              <Button disabled={!name.trim() || !whatsapp.trim()} onClick={() => setStep(4)}>
                 Finish <ArrowRight className="h-4 w-4" />
               </Button>
             </div>

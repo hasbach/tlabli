@@ -25,7 +25,15 @@ its "Known limitations" section):
    first staff row. Something has to create both rows for a new owner in one
    step, bypassing that circularity deliberately and only there.
 
-This spec resolves both, and nothing else. Explicitly out of scope, per the
+This spec fully resolves item 2, and resolves only the *identity* half of
+item 1 (the `PLATFORM_ADMIN_EMAILS` allowlist + middleware check) — it adds
+no RLS policy letting an allowlisted admin actually read or write across
+tenants; every policy in `02_rls.sql` still scopes to `is_staff_of`. That's
+invisible today since `/admin` reads mock data, but the owner-side-wiring
+sub-project must add the actual cross-tenant RLS policy (or a
+`SECURITY DEFINER` admin RPC, mirroring `create_restaurant_with_owner`'s
+pattern) before wiring `/admin` to real queries, or every admin read/write
+will silently return zero rows / fail. Explicitly out of scope, per the
 approved design conversation: `/dashboard`'s displayed data (menu, orders,
 analytics, settings) stays on `lib/mock-data.ts`, unchanged, regardless of
 who is logged in. Gating login does not make the dashboard show *your*
