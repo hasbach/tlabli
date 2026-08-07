@@ -147,9 +147,13 @@ New file `scripts/seed-staff-logins.mjs` (not part of `supabase/sql/`, since
 it needs the JS Admin SDK, not plain SQL): a one-off script the user runs
 themselves, once, after filling in `SUPABASE_SERVICE_ROLE_KEY`. For each of
 the 7 seeded staff members (email addresses invented — not in
-`lib/mock-data.ts`, which has no emails, only names/phones — using the
-`.example` TLD, reserved by RFC 2606 so it can never collide with a real
-domain, and one shared, clearly-fake password), it calls
+`lib/mock-data.ts`, which has no emails, only names/phones. Originally
+planned to use the RFC 2606-reserved `.example` TLD, but live testing during
+implementation showed Supabase's own signup validation rejects RFC
+2606-reserved test domains (`.example`, `.test`, `.invalid`) outright as
+"invalid" before creating any auth row — so these use `gmail.com` with
+high-entropy, obviously-synthetic local parts instead, and one shared,
+clearly-fake password), it calls
 `admin.auth.admin.createUser(...)` then updates that person's `staff_users`
 row's `auth_user_id` by matching on `name` (safe here — all 7 seeded names
 are unique).
