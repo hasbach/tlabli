@@ -69,4 +69,7 @@ Per the pricing model in `PROJECT_INSTRUCTIONS.md`, billing is manual:
 - Dual currency ($ / L.L.) display throughout.
 - Arabic (RTL), English, and French storefront language switching.
 - Per-item availability toggle + time-window scheduling.
+- Platform admin panel (`/admin`) for managing tenant plan/status/billing,
+  and per-restaurant team/staff role management in Settings — both UI + mock
+  data only, ready to gate behind real auth once Supabase is connected.
 - Design system documented in `design-system/tlabli/MASTER.md`.

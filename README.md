@@ -42,22 +42,25 @@ Then open http://localhost:3000.
   WhatsApp checkout
 - `/onboarding` — restaurant type & template picker wizard
 - `/dashboard` — owner dashboard (menu builder, kitchen order queue,
-  analytics, settings) — currently shows Burger House's demo data
+  analytics, settings incl. team/staff roles) — currently shows Burger
+  House's demo data
 - `/order/o-1001` — customer-facing order status tracking page
+- `/admin` — platform admin panel (all tenants, plan/status, manual billing)
 
 ## Project structure
 
 ```
-app/                     Next.js routes (marketing, templates, dashboard, onboarding, order tracking)
+app/                     Next.js routes (marketing, templates, dashboard, onboarding, order tracking, admin)
 components/
   ui/                     Hand-rolled shadcn-style primitives (button, card, sheet, tabs, ...)
   marketing/              Landing page sections
   storefront/             Cart, checkout, menu item card, language switcher, QR code
   templates/              The 4 menu template layouts (fast-food, bakery, fine-dining, cafe)
-  dashboard/               Sidebar, stat cards, order queue, menu builder, analytics, settings
+  dashboard/               Sidebar, stat cards, order queue, menu builder, analytics, settings, team
+  admin/                   Platform admin: tenant table + manage-tenant sheet
 lib/
   types.ts                Data model (mirrors PROJECT_INSTRUCTIONS.md section 7)
-  mock-data.ts             Demo restaurants/menus/orders — swap for Supabase later
+  mock-data.ts             Demo restaurants/menus/orders/subscriptions/staff — swap for Supabase later
   menu.ts                  getMenuSections() — the one function to swap for a real query
   whatsapp.ts              wa.me order message builder
   i18n/                    en/ar/fr dictionaries + locale/RTL provider
