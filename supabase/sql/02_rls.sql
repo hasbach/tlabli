@@ -2,6 +2,10 @@
 -- Enables row-level security on every table from 01_schema.sql and defines
 -- the access policies. Run SECOND, after 01_schema.sql, before 03_storage.sql.
 
+-- Known access-control gaps deliberately deferred to later sub-projects —
+-- see "Known limitations, deferred to later sub-projects" in
+-- docs/superpowers/specs/2026-08-07-supabase-schema-rls-design.md.
+
 alter table restaurants enable row level security;
 alter table menu_categories enable row level security;
 alter table menu_items enable row level security;
@@ -38,19 +42,21 @@ $$;
 create function restaurant_id_of_category(target_category_id uuid)
 returns uuid
 language sql
+set search_path = ''
 stable
 as $$
-  select restaurant_id from menu_categories where id = target_category_id;
+  select restaurant_id from public.menu_categories where id = target_category_id;
 $$;
 
 create function restaurant_id_of_item(target_item_id uuid)
 returns uuid
 language sql
+set search_path = ''
 stable
 as $$
   select mc.restaurant_id
-  from menu_items mi
-  join menu_categories mc on mc.id = mi.category_id
+  from public.menu_items mi
+  join public.menu_categories mc on mc.id = mi.category_id
   where mi.id = target_item_id;
 $$;
 

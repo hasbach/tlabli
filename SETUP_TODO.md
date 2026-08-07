@@ -23,8 +23,11 @@ can run against a real database and send real WhatsApp orders.
    `lib/supabase/client.ts`.
 5. Swap the mock reads in `lib/mock-data.ts` / `lib/menu.ts` for real Supabase
    queries — every place that needs this is marked with a
-   `// TODO(supabase):` comment. (This is its own separate piece of work —
-   see the project's other in-progress specs for auth and data-wiring.)
+   `// TODO(supabase):` comment. (This is its own separate piece of work,
+   planned as follow-up sub-projects — auth, then owner-side data wiring,
+   then storefront wiring — see the "Known limitations" section of
+   `docs/superpowers/specs/2026-08-07-supabase-schema-rls-design.md` for the
+   access-control gaps those sub-projects still need to close.)
 
 ## 2. WhatsApp order notifications
 

@@ -112,3 +112,17 @@ create table staff_users (
   phone text not null,
   role text not null check (role in ('owner','staff')) default 'staff'
 );
+
+-- Indexes on foreign keys (Postgres does not create these automatically).
+-- staff_users(auth_user_id) matters most: is_staff_of() looks it up on every
+-- RLS check for every staff-scoped table.
+create index on menu_categories (restaurant_id);
+create index on menu_items (category_id);
+create index on item_addons (item_id);
+create index on drivers (restaurant_id);
+create index on orders (restaurant_id);
+create index on orders (driver_id);
+create index on promo_codes (restaurant_id);
+create index on subscriptions (restaurant_id);
+create index on staff_users (restaurant_id);
+create index on staff_users (auth_user_id);
