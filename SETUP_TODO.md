@@ -9,19 +9,22 @@ can run against a real database and send real WhatsApp orders.
 ## 1. Create the Supabase project (required to go live)
 
 1. Create a free project at supabase.com.
-2. In the SQL editor, create tables matching `lib/types.ts` — the shapes there
-   mirror `PROJECT_INSTRUCTIONS.md` section 7 exactly: `restaurants`,
-   `menu_categories`, `menu_items`, `item_addons`, `orders`, `drivers`,
-   `promo_codes`, `subscriptions`, `staff_users`.
-3. Enable Row-Level Security on every table so each restaurant only reads/writes
-   its own rows.
-4. Create a Storage bucket (e.g. `menu-photos`) for owner-uploaded item photos.
-5. Copy the project URL and anon key into `.env.local` (see `.env.example`).
-6. Run `npm install @supabase/supabase-js` and uncomment the client in
+2. Open the SQL Editor and run these four files, in order, pasting each
+   one's full contents and clicking Run before moving to the next:
+   `supabase/sql/01_schema.sql`, `supabase/sql/02_rls.sql`,
+   `supabase/sql/03_storage.sql`, `supabase/sql/04_seed.sql`. Together they
+   create all 9 tables (matching `lib/types.ts` / `PROJECT_INSTRUCTIONS.md`
+   section 7), enable Row-Level Security with the right policies, create the
+   `menu-photos` storage bucket, and seed the same 4 demo restaurants
+   `lib/mock-data.ts` already shows — so you can confirm the real database
+   looks right before anything in the app depends on it.
+3. Copy the project URL and anon key into `.env.local` (see `.env.example`).
+4. Run `npm install @supabase/supabase-js` and uncomment the client in
    `lib/supabase/client.ts`.
-7. Swap the mock reads in `lib/mock-data.ts` / `lib/menu.ts` for real Supabase
+5. Swap the mock reads in `lib/mock-data.ts` / `lib/menu.ts` for real Supabase
    queries — every place that needs this is marked with a
-   `// TODO(supabase):` comment.
+   `// TODO(supabase):` comment. (This is its own separate piece of work —
+   see the project's other in-progress specs for auth and data-wiring.)
 
 ## 2. WhatsApp order notifications
 
