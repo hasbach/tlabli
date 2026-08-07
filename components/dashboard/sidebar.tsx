@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { LayoutDashboard, UtensilsCrossed, ClipboardList, BarChart3, Settings, ExternalLink } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { LayoutDashboard, UtensilsCrossed, ClipboardList, BarChart3, Settings, ExternalLink, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { restaurants } from "@/lib/mock-data";
+import { supabase } from "@/lib/supabase/client";
 
 const nav = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -16,7 +17,13 @@ const nav = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const restaurant = restaurants[0]; // TODO(supabase): swap for the authenticated owner's restaurant
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.push("/login");
+  }
 
   return (
     <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-border bg-card">
@@ -57,6 +64,15 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      <button
+        type="button"
+        onClick={handleLogout}
+        className="mx-3 mb-3 flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
+        <LogOut className="h-4 w-4" />
+        Log out
+      </button>
 
       <div className="m-3 rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
         Running on demo data. Connect Supabase to go live — see <span className="font-medium text-foreground">SETUP_TODO.md</span>.
