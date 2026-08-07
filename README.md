@@ -44,6 +44,7 @@ Then open http://localhost:3000.
 - `/dashboard` — owner dashboard (menu builder, kitchen order queue,
   analytics, settings incl. team/staff roles) — currently shows Burger
   House's demo data
+- `/login` — email/password login; `/dashboard` and `/admin` redirect here if you're not signed in
 - `/order/o-1001` — customer-facing order status tracking page
 - `/admin` — platform admin panel (all tenants, plan/status, manual billing)
 
@@ -64,7 +65,7 @@ lib/
   menu.ts                  getMenuSections() — the one function to swap for a real query
   whatsapp.ts              wa.me order message builder
   i18n/                    en/ar/fr dictionaries + locale/RTL provider
-  supabase/client.ts        Inert stub until Supabase is connected
+  supabase/client.ts        Real browser client (@supabase/ssr) — connected
 design-system/tlabli/       Design tokens & rationale from the ui-ux-pro-max research
 ```
 
@@ -80,6 +81,9 @@ components.
 
 - No real database — every write (adding a menu item, advancing an order,
   saving settings) only updates in-memory React state and resets on reload.
-- No real authentication — `/dashboard` isn't gated behind a login yet.
+- Real login/signup exists (`/login`, `/onboarding`), and `/dashboard`/`/admin`
+  are gated behind it — but `/dashboard` still shows the same mock data
+  regardless of who's logged in; wiring it to the logged-in user's actual
+  restaurant is the next piece of work (owner-side data wiring).
 - Menu item photos are CSS/icon placeholders, not real photos — see
   `SETUP_TODO.md` item 5 for why that's actually correct for now.
