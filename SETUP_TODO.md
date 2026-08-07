@@ -57,11 +57,11 @@ To upgrade to fully automatic notifications (no customer action required):
 2. Set `NEXT_PUBLIC_SITE_URL` in your production environment.
 3. Add your Supabase Storage hostname to `next.config.mjs` under
    `images.remotePatterns` once photo uploads are live.
-4. **Before this goes live for real customers:** `/admin` has no login gate
-   yet and exposes every tenant's plan, billing status, and payment-proof
-   notes to anyone who navigates to the URL. Put real authentication and a
-   platform-admin permission check in front of it before connecting a public
-   domain — see the `TODO(supabase):` marker in `app/admin/page.tsx`.
+4. `/admin` is now gated behind real login plus the `PLATFORM_ADMIN_EMAILS`
+   allowlist (see section 1) — but that allowlist is the only thing standing
+   between the public internet and every tenant's billing data once you
+   connect a real domain, so double-check it only lists emails you actually
+   trust before going live.
 
 ## 4. Collecting your own subscription payments
 
@@ -69,8 +69,8 @@ Per the pricing model in `PROJECT_INSTRUCTIONS.md`, billing is manual:
 
 1. Set up an OMT and/or Whish Money account to receive owner payments.
 2. Use the `/admin` panel to record payment confirmations and activate
-   accounts (UI + mock data only for now — see the warning in section 3
-   about gating it before going live).
+   accounts (mock data only for now — see section 1.6; the panel itself is
+   gated behind real login, see section 3).
 
 ## 5. Content
 
@@ -89,6 +89,11 @@ Per the pricing model in `PROJECT_INSTRUCTIONS.md`, billing is manual:
 - Arabic (RTL), English, and French storefront language switching.
 - Per-item availability toggle + time-window scheduling.
 - Platform admin panel (`/admin`) for managing tenant plan/status/billing,
-  and per-restaurant team/staff role management in Settings — both UI + mock
-  data only, ready to gate behind real auth once Supabase is connected.
+  and per-restaurant team/staff role management in Settings — mock data
+  only, but gated behind real login and the `PLATFORM_ADMIN_EMAILS`
+  allowlist.
+- Real login (`/login`), signup (`/onboarding`), and logout — `/dashboard`
+  and `/admin` are gated behind an authenticated session via `middleware.ts`,
+  though `/dashboard`'s displayed data still shows mock data regardless of
+  who's logged in (see item 1.6 above).
 - Design system documented in `design-system/tlabli/MASTER.md`.
