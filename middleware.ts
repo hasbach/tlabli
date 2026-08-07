@@ -28,7 +28,9 @@ export async function middleware(request: NextRequest) {
   const isAdmin = pathname.startsWith("/admin");
 
   if ((isDashboard || isAdmin) && !user) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    const redirectResponse = NextResponse.redirect(new URL("/login", request.url));
+    response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie.name, cookie.value));
+    return redirectResponse;
   }
 
   if (isAdmin && user) {
@@ -36,8 +38,10 @@ export async function middleware(request: NextRequest) {
       .split(",")
       .map((email) => email.trim().toLowerCase())
       .filter(Boolean);
-    if (!adminEmails.includes((user.email ?? "").toLowerCase())) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+    if (!adminEmails.includes((user.email ?? "").trim().toLowerCase())) {
+      const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.url));
+      response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie.name, cookie.value));
+      return redirectResponse;
     }
   }
 
