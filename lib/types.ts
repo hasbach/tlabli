@@ -120,9 +120,9 @@ export interface PromoCode {
 export interface Subscription {
   id: string;
   restaurantId: string;
-  periodStart: string;
-  periodEnd: string;
-  paymentProofRef?: string;
+  periodStart: string; // ISO date, e.g. "2026-07-01"
+  periodEnd: string; // ISO date
+  paymentProofRef?: string; // OMT/Whish reference note, set by admin
 }
 
 export type StaffRole = "owner" | "staff";

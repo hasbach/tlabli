@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
 import type { Restaurant, StaffRole, StaffUser } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,14 +19,13 @@ export function TeamSection({ restaurant, initialStaff }: { restaurant: Restaura
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState<StaffRole>("staff");
-
-  const owner = staff[0];
+  const nextId = useRef(initialStaff.length + 1);
 
   function addMember() {
     if (!name || !phone) return;
     setStaff((prev) => [
       ...prev,
-      { id: `st-${restaurant.id}-${prev.length + 1}`, restaurantId: restaurant.id, name, phone, role },
+      { id: `st-${restaurant.id}-${nextId.current++}`, restaurantId: restaurant.id, name, phone, role },
     ]);
     setName("");
     setPhone("");
@@ -38,6 +37,7 @@ export function TeamSection({ restaurant, initialStaff }: { restaurant: Restaura
   }
 
   function changeRole(id: string, newRole: StaffRole) {
+    // TODO(supabase): persist the role change and enforce it via real permission checks once auth exists.
     setStaff((prev) => prev.map((s) => (s.id === id ? { ...s, role: newRole } : s)));
   }
 
@@ -52,7 +52,7 @@ export function TeamSection({ restaurant, initialStaff }: { restaurant: Restaura
       <CardContent className="pt-0">
         <div className="space-y-2">
           {staff.map((member) => {
-            const isOwner = member.id === owner?.id;
+            const isOwner = member.role === "owner";
             return (
               <div key={member.id} className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
                 <div className="min-w-0">
@@ -92,7 +92,7 @@ export function TeamSection({ restaurant, initialStaff }: { restaurant: Restaura
           })}
         </div>
 
-        <div className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-3">
+        <div className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-4">
           <div>
             <Label htmlFor="team-name">Name</Label>
             <Input id="team-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" />
@@ -100,6 +100,23 @@ export function TeamSection({ restaurant, initialStaff }: { restaurant: Restaura
           <div>
             <Label htmlFor="team-phone">Phone</Label>
             <Input id="team-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+961 7X XXX XXX" />
+          </div>
+          <div>
+            <Label>Role</Label>
+            <div className="flex overflow-hidden rounded-lg border border-border text-xs font-medium">
+              {(["staff", "owner"] as StaffRole[]).map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setRole(r)}
+                  className={`flex-1 px-2.5 py-2.5 capitalize transition-colors ${
+                    role === r ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="flex items-end">
             <Button onClick={addMember} disabled={!name || !phone} className="w-full">

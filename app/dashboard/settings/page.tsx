@@ -3,7 +3,7 @@ import { TeamSection } from "@/components/dashboard/team-section";
 import { restaurants, staffUsers } from "@/lib/mock-data";
 
 export default function SettingsPage() {
-  const restaurant = restaurants[0];
+  const restaurant = restaurants[0]; // TODO(supabase): swap for the authenticated owner's restaurant
   return (
     <div className="mx-auto max-w-5xl">
       <h1 className="text-2xl font-extrabold tracking-tight">Settings</h1>
