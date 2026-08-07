@@ -249,3 +249,41 @@ bucket exists. That confirmation happens in a later session once the user has
 actually created the project — this spec's own self-review can only confirm
 the SQL is internally consistent (every FK target table is defined before use
 in file order, every policy references a table/column defined in `01_schema.sql`).
+
+## Known limitations, deferred to later sub-projects
+
+Found during the final whole-branch review, confirmed with the user, and
+deliberately left unfixed here because each depends on decisions the later
+sub-projects still need to make:
+
+1. **No platform-admin RLS bypass.** Every policy in `02_rls.sql` scopes
+   access to `is_staff_of(restaurant_id)` — there is no cross-tenant read or
+   write path. The already-built `/admin` panel (`app/admin/page.tsx`) needs
+   exactly that. Owned by the **Auth** sub-project, since "what makes someone
+   a platform admin" is an identity question that sub-project has to answer
+   anyway.
+2. **Tenants can write their own billing state.** `restaurants`' staff-update
+   policy and `subscriptions`' staff-`for all` policy let a tenant
+   self-upgrade `plan_id`, flip `status` to `active`, or insert a fabricated
+   `payment_proof_ref` — the inverse of item 1. Owned by the **owner-side
+   wiring** sub-project, which should revoke tenant write access to
+   `restaurants.plan_id`/`status` and reduce `subscriptions` to staff-read-only
+   once the admin panel is the sole writer of billing state.
+3. **`drivers` has no public-read policy**, but the already-built customer
+   order-tracking page (`app/order/[orderId]/page.tsx`) displays driver
+   name/phone with no login. Fails closed today (the card just won't render
+   once wired) rather than leaking anything — but it needs a fix before that
+   page can show real data.
+4. **`orders` is fully anon-readable** (`for select using (true)`) — this was
+   an explicit, approved choice in this spec's original RLS section ("the
+   order-tracking link is the auth"), but a table-wide policy can't express
+   "only if you already know the id": anyone holding the public anon key can
+   read every customer's name/phone/address across every restaurant, not
+   just the one order they're tracking.
+
+Items 3 and 4 share one fix, recommended by the review and agreed with the
+user: replace the blanket `orders`/`drivers` anon-read policies with a single
+`SECURITY DEFINER` RPC that takes an order id and returns that order joined
+to its driver — the id becomes the actual capability, not a wide-open table
+policy. Design this alongside the **storefront-wiring** sub-project, once
+that sub-project knows exactly how the order-tracking page will call it.
