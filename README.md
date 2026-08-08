@@ -7,22 +7,28 @@ research this app is built from.
 
 ## Status
 
-Fully built frontend running on **mock data** — nothing here needs a backend
-to try. See `SETUP_TODO.md` for the handful of steps (Supabase, WhatsApp
-Cloud API, a domain) that need real accounts before this goes live for real
-customers.
+Frontend + a live Supabase backend for auth (real login/signup) — but
+`/dashboard`'s displayed data (menu, orders, analytics, settings) is still
+**mock data** regardless of who's logged in. `/login`, `/onboarding`,
+`/dashboard`, and `/admin` all require `NEXT_PUBLIC_SUPABASE_URL` /
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` to be set (see `.env.local` / `.env.example`)
+— without them those routes fail to build or render. See `SETUP_TODO.md`
+for the remaining steps (WhatsApp Cloud API, a domain, swapping the
+dashboard's own data source) before this is fully live for real customers.
 
 ## Stack
 
 Next.js (App Router) + TypeScript + Tailwind CSS + hand-rolled shadcn-style
-components + Radix UI primitives + Recharts. No backend wired up yet — see
-`lib/mock-data.ts` and the `// TODO(supabase):` comments throughout for
-exactly where real data will plug in.
+components + Radix UI primitives + Recharts. Supabase is wired up for auth
+(real login/signup); dashboard data is still mock — see `lib/mock-data.ts`
+and the `// TODO(supabase):` comments throughout for exactly where real
+data will plug in next.
 
 ## Getting started
 
 ```bash
 npm install
+cp .env.example .env.local   # fill in NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY — see SETUP_TODO.md item 1
 npm run dev
 ```
 
@@ -44,6 +50,7 @@ Then open http://localhost:3000.
 - `/dashboard` — owner dashboard (menu builder, kitchen order queue,
   analytics, settings incl. team/staff roles) — currently shows Burger
   House's demo data
+- `/login` — email/password login; `/dashboard` and `/admin` redirect here if you're not signed in
 - `/order/o-1001` — customer-facing order status tracking page
 - `/admin` — platform admin panel (all tenants, plan/status, manual billing)
 
@@ -64,7 +71,7 @@ lib/
   menu.ts                  getMenuSections() — the one function to swap for a real query
   whatsapp.ts              wa.me order message builder
   i18n/                    en/ar/fr dictionaries + locale/RTL provider
-  supabase/client.ts        Inert stub until Supabase is connected
+  supabase/client.ts        Real browser client (@supabase/ssr) — connected
 design-system/tlabli/       Design tokens & rationale from the ui-ux-pro-max research
 ```
 
@@ -78,8 +85,13 @@ components.
 
 ## Known limitations (by design, for now)
 
-- No real database — every write (adding a menu item, advancing an order,
-  saving settings) only updates in-memory React state and resets on reload.
-- No real authentication — `/dashboard` isn't gated behind a login yet.
+- No real database for the dashboard — every write there (adding a menu
+  item, advancing an order, saving settings) only updates in-memory React
+  state and resets on reload. Auth (login/signup) IS backed by a real
+  Supabase database — see the next bullet.
+- Real login/signup exists (`/login`, `/onboarding`), and `/dashboard`/`/admin`
+  are gated behind it — but `/dashboard` still shows the same mock data
+  regardless of who's logged in; wiring it to the logged-in user's actual
+  restaurant is the next piece of work (owner-side data wiring).
 - Menu item photos are CSS/icon placeholders, not real photos — see
   `SETUP_TODO.md` item 5 for why that's actually correct for now.

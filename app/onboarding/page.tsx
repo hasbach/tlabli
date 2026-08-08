@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Beef, Croissant, Wine, Coffee, ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Beef, Croissant, Wine, Coffee, ArrowRight, ArrowLeft } from "lucide-react";
 import type { RestaurantType } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Navbar } from "@/components/marketing/navbar";
+import { supabase } from "@/lib/supabase/client";
 
 const TYPES: { id: RestaurantType; label: string; description: string; icon: typeof Beef; previewSlug: string }[] = [
   { id: "fast-food", label: "Fast Food & Snacks", description: "Burgers, shawarma, quick bites", icon: Beef, previewSlug: "burger-house" },
@@ -18,12 +20,71 @@ const TYPES: { id: RestaurantType; label: string; description: string; icon: typ
 ];
 
 export default function OnboardingPage() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [type, setType] = useState<RestaurantType | null>(null);
   const [name, setName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const selected = TYPES.find((t) => t.id === type);
+
+  async function handleCreateAccount() {
+    if (!selected) return;
+    setSubmitting(true);
+    setError(null);
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    let hasSession = Boolean(sessionData.session);
+
+    if (!hasSession) {
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
+      if (signUpError) {
+        setError(signUpError.message);
+        setSubmitting(false);
+        return;
+      }
+      hasSession = Boolean(signUpData.session);
+    }
+
+    if (!hasSession) {
+      setError("Check your email to confirm your account, then come back and try again.");
+      setSubmitting(false);
+      return;
+    }
+
+    const rawSlug = name
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    const slug = rawSlug || `restaurant-${Date.now().toString(36)}`;
+
+    const { error: rpcError } = await supabase.rpc("create_restaurant_with_owner", {
+      p_name: name.trim(),
+      p_slug: slug,
+      p_type: selected.id,
+      p_whatsapp_number: whatsapp.trim(),
+    });
+
+    setSubmitting(false);
+
+    if (rpcError) {
+      if (rpcError.code === "23505") {
+        setError("That business name is already taken — try a slightly different name.");
+      } else if (rpcError.code === "42501") {
+        setError("Your account isn't confirmed yet — check your email, then come back and try again.");
+      } else {
+        setError(rpcError.message);
+      }
+      return;
+    }
+
+    router.push("/dashboard");
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -109,26 +170,44 @@ export default function OnboardingPage() {
               <Button variant="ghost" onClick={() => setStep(2)}>
                 <ArrowLeft className="h-4 w-4" /> Back
               </Button>
-              <Button disabled={!name || !whatsapp} onClick={() => setStep(4)}>
+              <Button disabled={!name.trim() || !whatsapp.trim()} onClick={() => setStep(4)}>
                 Finish <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
         )}
 
-        {step === 4 && (
-          <div className="text-center">
-            <CheckCircle2 className="mx-auto h-14 w-14 text-success" />
-            <h1 className="mt-4 text-2xl font-extrabold tracking-tight">You&apos;re almost live, {name || "there"}!</h1>
-            <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
-              One real step left: creating your account needs a Supabase connection, which isn&apos;t set up yet in this
-              build. For now, explore the dashboard with sample data to see exactly what you&apos;ll get.
+        {step === 4 && selected && (
+          <div>
+            <h1 className="text-center text-2xl font-extrabold tracking-tight">Create your account, {name}</h1>
+            <p className="mx-auto mb-8 max-w-sm text-center text-sm text-muted-foreground">
+              One step left — set a password and your menu goes live.
             </p>
-            <Button size="lg" className="mt-6" asChild>
-              <Link href="/dashboard">
-                Explore the dashboard <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
+            <div className="mx-auto max-w-sm space-y-4">
+              <div>
+                <Label htmlFor="ob-email">Email</Label>
+                <Input id="ob-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@restaurant.com" />
+              </div>
+              <div>
+                <Label htmlFor="ob-password">Password</Label>
+                <Input
+                  id="ob-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="At least 6 characters"
+                />
+              </div>
+              {error && <p className="text-sm text-destructive">{error}</p>}
+            </div>
+            <div className="mx-auto mt-8 flex max-w-sm justify-between">
+              <Button variant="ghost" onClick={() => setStep(3)}>
+                <ArrowLeft className="h-4 w-4" /> Back
+              </Button>
+              <Button disabled={!email || !password || submitting} onClick={handleCreateAccount}>
+                {submitting ? "Creating…" : "Create account"} <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         )}
       </div>
