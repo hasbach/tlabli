@@ -1,10 +1,25 @@
-import { orders } from "@/lib/mock-data";
+import { redirect } from "next/navigation";
 import { OrderQueueBoard } from "@/components/dashboard/order-queue-board";
 import { OrderStatusBadge } from "@/components/dashboard/order-status-badge";
 import { formatMoney } from "@/lib/currency";
 import { Card } from "@/components/ui/card";
+import { getCurrentRestaurant } from "@/lib/dashboard/current-restaurant";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { mapOrderRow } from "@/lib/supabase/mappers";
 
-export default function OrdersPage() {
+export default async function OrdersPage() {
+  const current = await getCurrentRestaurant();
+  if (!current) redirect("/login");
+  const { restaurant } = current;
+
+  const supabase = createServerSupabaseClient();
+  const { data: orderRows } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("restaurant_id", restaurant.id)
+    .order("queue_number", { ascending: true });
+
+  const orders = (orderRows ?? []).map(mapOrderRow);
   const completed = orders.filter((o) => o.status === "completed" || o.status === "cancelled");
 
   return (
@@ -15,7 +30,7 @@ export default function OrdersPage() {
       </p>
 
       <div className="mt-6">
-        <OrderQueueBoard initialOrders={orders} />
+        <OrderQueueBoard initialOrders={orders} restaurantId={restaurant.id} />
       </div>
 
       {completed.length > 0 && (
