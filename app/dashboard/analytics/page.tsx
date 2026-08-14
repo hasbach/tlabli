@@ -1,7 +1,15 @@
+import { redirect } from "next/navigation";
 import { AnalyticsCharts } from "@/components/dashboard/analytics-charts";
-import { analytics } from "@/lib/mock-data";
+import { getCurrentRestaurant } from "@/lib/dashboard/current-restaurant";
+import { getAnalyticsSnapshot } from "@/lib/analytics";
 
-export default function AnalyticsPage() {
+export default async function AnalyticsPage() {
+  const current = await getCurrentRestaurant();
+  if (!current) redirect("/login");
+  const { restaurant } = current;
+
+  const analytics = await getAnalyticsSnapshot(restaurant.id, restaurant.currency);
+
   return (
     <div className="mx-auto max-w-5xl">
       <h1 className="text-2xl font-extrabold tracking-tight">Analytics</h1>
