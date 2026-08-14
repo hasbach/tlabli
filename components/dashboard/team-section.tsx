@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import type { Restaurant, StaffRole, StaffUser } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { addStaffMember, removeStaffMember, updateStaffRole } from "@/lib/actions/staff-actions";
 
 const ROLE_CAPTION: Record<StaffRole, string> = {
   owner: "Full access, including billing and menu.",
@@ -19,26 +20,47 @@ export function TeamSection({ restaurant, initialStaff }: { restaurant: Restaura
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState<StaffRole>("staff");
-  const nextId = useRef(initialStaff.length + 1);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  function addMember() {
-    if (!name || !phone) return;
-    setStaff((prev) => [
-      ...prev,
-      { id: `st-${restaurant.id}-${nextId.current++}`, restaurantId: restaurant.id, name, phone, role },
-    ]);
+  async function addMember() {
+    if (!name || !phone || !email || !password) return;
+    setSubmitting(true);
+    setError(null);
+    const result = await addStaffMember({ restaurantId: restaurant.id, name, phone, role, email, password });
+    setSubmitting(false);
+    if ("error" in result) {
+      setError(result.error);
+      return;
+    }
+    setStaff((prev) => [...prev, result.data]);
     setName("");
     setPhone("");
     setRole("staff");
+    setEmail("");
+    setPassword("");
   }
 
-  function removeMember(id: string) {
+  async function removeMember(id: string) {
+    const previous = staff;
     setStaff((prev) => prev.filter((s) => s.id !== id));
+    const result = await removeStaffMember(id);
+    if ("error" in result) {
+      setStaff(previous);
+      setError(result.error);
+    }
   }
 
-  function changeRole(id: string, newRole: StaffRole) {
-    // TODO(supabase): persist the role change and enforce it via real permission checks once auth exists.
+  async function changeRole(id: string, newRole: StaffRole) {
+    const previous = staff;
     setStaff((prev) => prev.map((s) => (s.id === id ? { ...s, role: newRole } : s)));
+    const result = await updateStaffRole(id, newRole);
+    if ("error" in result) {
+      setStaff(previous);
+      setError(result.error);
+    }
   }
 
   return (
@@ -92,7 +114,7 @@ export function TeamSection({ restaurant, initialStaff }: { restaurant: Restaura
           })}
         </div>
 
-        <div className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-4">
+        <div className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
           <div>
             <Label htmlFor="team-name">Name</Label>
             <Input id="team-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" />
@@ -100,6 +122,20 @@ export function TeamSection({ restaurant, initialStaff }: { restaurant: Restaura
           <div>
             <Label htmlFor="team-phone">Phone</Label>
             <Input id="team-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+961 7X XXX XXX" />
+          </div>
+          <div>
+            <Label htmlFor="team-email">Login email</Label>
+            <Input id="team-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="staff@restaurant.com" />
+          </div>
+          <div>
+            <Label htmlFor="team-password">Temporary password</Label>
+            <Input
+              id="team-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 6 characters"
+            />
           </div>
           <div>
             <Label>Role</Label>
@@ -119,11 +155,12 @@ export function TeamSection({ restaurant, initialStaff }: { restaurant: Restaura
             </div>
           </div>
           <div className="flex items-end">
-            <Button onClick={addMember} disabled={!name || !phone} className="w-full">
-              Add team member
+            <Button onClick={addMember} disabled={!name || !phone || !email || !password || submitting} className="w-full">
+              {submitting ? "Adding…" : "Add team member"}
             </Button>
           </div>
         </div>
+        {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
       </CardContent>
     </Card>
   );

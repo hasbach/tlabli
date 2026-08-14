@@ -9,14 +9,37 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { QRCodeBlock } from "@/components/storefront/qr-code-block";
+import { updateRestaurantSettings } from "@/lib/actions/settings-actions";
 
 export function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
   const [form, setForm] = useState(restaurant);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   function update<K extends keyof Restaurant>(key: K, value: Restaurant[K]) {
     setForm((f) => ({ ...f, [key]: value }));
     setSaved(false);
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setError(null);
+    const result = await updateRestaurantSettings(restaurant.id, {
+      name: form.name,
+      whatsappNumber: form.whatsappNumber,
+      tagline: form.tagline,
+      address: form.address,
+      currency: form.currency,
+      lbpExchangeRate: form.lbpExchangeRate,
+      showBothCurrencies: form.showBothCurrencies,
+    });
+    setSaving(false);
+    if ("error" in result) {
+      setError(result.error);
+      return;
+    }
+    setSaved(true);
   }
 
   return (
@@ -109,8 +132,11 @@ export function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
           </CardContent>
         </Card>
 
-        <Button onClick={() => setSaved(true)}>Save changes</Button>
-        {saved && <p className="text-sm text-success">Saved (demo only — connect Supabase to persist).</p>}
+        <Button onClick={handleSave} disabled={saving}>
+          {saving ? "Saving…" : "Save changes"}
+        </Button>
+        {saved && <p className="text-sm text-success">Saved.</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
       </div>
 
       <div>
