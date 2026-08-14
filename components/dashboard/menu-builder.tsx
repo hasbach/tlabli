@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { FoodImagePlaceholder } from "@/components/storefront/food-image-placeholder";
 import { formatMoney } from "@/lib/currency";
+import { createMenuItem, updateMenuItem, deleteMenuItem } from "@/lib/actions/menu-actions";
 
 type Draft = Partial<MenuItem> & { categoryId: string };
 
@@ -26,12 +27,27 @@ export function MenuBuilder({
   const [items, setItems] = useState(initialItems);
   const [editing, setEditing] = useState<Draft | null>(null);
 
-  function toggleAvailable(id: string) {
+  const [error, setError] = useState<string | null>(null);
+
+  async function toggleAvailable(id: string) {
+    const item = items.find((i) => i.id === id);
+    if (!item) return;
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, isAvailable: !i.isAvailable } : i)));
+    const result = await updateMenuItem(id, { isAvailable: !item.isAvailable });
+    if ("error" in result) {
+      setItems((prev) => prev.map((i) => (i.id === id ? { ...i, isAvailable: item.isAvailable } : i)));
+      setError(result.error);
+    }
   }
 
-  function removeItem(id: string) {
+  async function removeItem(id: string) {
+    const previous = items;
     setItems((prev) => prev.filter((i) => i.id !== id));
+    const result = await deleteMenuItem(id);
+    if ("error" in result) {
+      setItems(previous);
+      setError(result.error);
+    }
   }
 
   function openNew(categoryId: string) {
@@ -42,24 +58,39 @@ export function MenuBuilder({
     setEditing({ ...item });
   }
 
-  function saveDraft() {
+  async function saveDraft() {
     if (!editing || !editing.title || editing.price === undefined) return;
+    setError(null);
+
     if (editing.id) {
-      setItems((prev) => prev.map((i) => (i.id === editing.id ? ({ ...i, ...editing } as MenuItem) : i)));
-    } else {
-      const newItem: MenuItem = {
-        id: `i-${Date.now()}`,
-        categoryId: editing.categoryId,
-        title: editing.title!,
+      const result = await updateMenuItem(editing.id, {
+        title: editing.title,
         description: editing.description ?? "",
-        price: Number(editing.price) || 0,
-        imageUrl: null,
+        price: Number(editing.price),
         isAvailable: editing.isAvailable ?? true,
         availableFrom: editing.availableFrom,
         availableUntil: editing.availableUntil,
-        addons: [],
-      };
-      setItems((prev) => [...prev, newItem]);
+      });
+      if ("error" in result) {
+        setError(result.error);
+        return;
+      }
+      setItems((prev) => prev.map((i) => (i.id === result.data.id ? result.data : i)));
+    } else {
+      const result = await createMenuItem({
+        categoryId: editing.categoryId,
+        title: editing.title,
+        description: editing.description ?? "",
+        price: Number(editing.price) || 0,
+        isAvailable: editing.isAvailable ?? true,
+        availableFrom: editing.availableFrom,
+        availableUntil: editing.availableUntil,
+      });
+      if ("error" in result) {
+        setError(result.error);
+        return;
+      }
+      setItems((prev) => [...prev, result.data]);
     }
     setEditing(null);
   }
@@ -120,6 +151,8 @@ export function MenuBuilder({
           </section>
         );
       })}
+
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       <Sheet open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
         <SheetContent>
