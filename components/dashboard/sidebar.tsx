@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, UtensilsCrossed, ClipboardList, BarChart3, Settings, ExternalLink, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { restaurants } from "@/lib/mock-data";
 import { supabase } from "@/lib/supabase/client";
+import type { Restaurant } from "@/lib/types";
 
 const nav = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -15,10 +15,9 @@ const nav = [
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
-export function Sidebar() {
+export function Sidebar({ restaurant }: { restaurant: Restaurant }) {
   const pathname = usePathname();
   const router = useRouter();
-  const restaurant = restaurants[0]; // TODO(supabase): swap for the authenticated owner's restaurant
 
   async function handleLogout() {
     await supabase.auth.signOut();

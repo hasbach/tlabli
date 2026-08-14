@@ -1,0 +1,90 @@
+// -----------------------------------------------------------------------------
+// Converts raw Supabase rows (snake_case columns, per supabase/sql/01_schema.sql)
+// into this app's existing camelCase shapes (lib/types.ts) — every component
+// that already renders Restaurant/MenuItem/Order/etc. from lib/mock-data.ts
+// keeps working unchanged against these mapped objects.
+// -----------------------------------------------------------------------------
+
+import type { Restaurant, MenuCategory, MenuItem, ItemAddon, Order, OrderLineItem, StaffUser } from "@/lib/types";
+
+export function mapRestaurantRow(row: Record<string, unknown>): Restaurant {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    slug: row.slug as string,
+    type: row.type as Restaurant["type"],
+    templateId: row.template_id as Restaurant["templateId"],
+    tagline: row.tagline as string,
+    logoInitial: row.logo_initial as string,
+    currency: row.currency as Restaurant["currency"],
+    showBothCurrencies: row.show_both_currencies as boolean,
+    lbpExchangeRate: Number(row.lbp_exchange_rate),
+    languages: row.languages as Restaurant["languages"],
+    hours: row.hours as Restaurant["hours"],
+    planId: row.plan_id as Restaurant["planId"],
+    status: row.status as Restaurant["status"],
+    whatsappNumber: row.whatsapp_number as string,
+    phone: row.phone as string,
+    address: row.address as string,
+  };
+}
+
+export function mapMenuCategoryRow(row: Record<string, unknown>): MenuCategory {
+  return {
+    id: row.id as string,
+    restaurantId: row.restaurant_id as string,
+    name: row.name as string,
+    sortOrder: row.sort_order as number,
+  };
+}
+
+export function mapItemAddonRow(row: Record<string, unknown>): ItemAddon {
+  return { id: row.id as string, name: row.name as string, extraPrice: Number(row.extra_price) };
+}
+
+export function mapMenuItemRow(row: Record<string, unknown>, addons: ItemAddon[]): MenuItem {
+  return {
+    id: row.id as string,
+    categoryId: row.category_id as string,
+    title: row.title as string,
+    description: row.description as string,
+    price: Number(row.price),
+    imageUrl: (row.image_url as string) ?? null,
+    isAvailable: row.is_available as boolean,
+    availableFrom: (row.available_from as string) ?? undefined,
+    availableUntil: (row.available_until as string) ?? undefined,
+    addons,
+    variants: (row.variants as string[]) ?? undefined,
+    isPopular: row.is_popular as boolean,
+  };
+}
+
+export function mapOrderRow(row: Record<string, unknown>): Order {
+  return {
+    id: row.id as string,
+    queueNumber: row.queue_number as number,
+    restaurantId: row.restaurant_id as string,
+    customerName: row.customer_name as string,
+    customerPhone: row.customer_phone as string,
+    orderType: row.order_type as Order["orderType"],
+    tableNumber: (row.table_number as string) ?? undefined,
+    address: (row.address as string) ?? undefined,
+    items: row.items as OrderLineItem[],
+    total: Number(row.total),
+    currency: row.currency as Order["currency"],
+    status: row.status as Order["status"],
+    driver: undefined,
+    promoCode: (row.promo_code as string) ?? undefined,
+    createdAt: row.created_at as string,
+  };
+}
+
+export function mapStaffUserRow(row: Record<string, unknown>): StaffUser {
+  return {
+    id: row.id as string,
+    restaurantId: row.restaurant_id as string,
+    name: row.name as string,
+    phone: row.phone as string,
+    role: row.role as StaffUser["role"],
+  };
+}
