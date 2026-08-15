@@ -7,14 +7,16 @@ research this app is built from.
 
 ## Status
 
-Frontend + a live Supabase backend for auth (real login/signup) — but
-`/dashboard`'s displayed data (menu, orders, analytics, settings) is still
-**mock data** regardless of who's logged in. `/login`, `/onboarding`,
-`/dashboard`, and `/admin` all require `NEXT_PUBLIC_SUPABASE_URL` /
-`NEXT_PUBLIC_SUPABASE_ANON_KEY` to be set (see `.env.local` / `.env.example`)
-— without them those routes fail to build or render. See `SETUP_TODO.md`
-for the remaining steps (WhatsApp Cloud API, a domain, swapping the
-dashboard's own data source) before this is fully live for real customers.
+Frontend + a live Supabase backend for auth, the owner dashboard, and the
+storefront. `/dashboard` (menu builder, orders, analytics, settings, team)
+and the storefront (menu display, checkout, order tracking) all read and
+write real data scoped to the logged-in owner's own restaurant — no more
+`lib/mock-data.ts`. `/login`, `/onboarding`, `/dashboard`, and `/admin` all
+require `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` to be
+set (see `.env.local` / `.env.example`) — without them those routes fail to
+build or render. `/admin` itself is still mock data (see Known limitations).
+See `SETUP_TODO.md` for the remaining steps (WhatsApp Cloud API, a domain)
+before this is fully live for real customers.
 
 ## Stack
 
@@ -85,13 +87,14 @@ components.
 
 ## Known limitations (by design, for now)
 
-- No real database for the dashboard — every write there (adding a menu
-  item, advancing an order, saving settings) only updates in-memory React
-  state and resets on reload. Auth (login/signup) IS backed by a real
-  Supabase database — see the next bullet.
-- Real login/signup exists (`/login`, `/onboarding`), and `/dashboard`/`/admin`
-  are gated behind it — but `/dashboard` still shows the same mock data
-  regardless of who's logged in; wiring it to the logged-in user's actual
-  restaurant is the next piece of work (owner-side data wiring).
+- `/admin` (the platform admin panel) still shows mock data — every RLS
+  policy scopes to a restaurant's own staff, with no cross-tenant read path
+  yet for the admin panel; that's a future sub-project.
+- No staff self-service invite flow — the owner creates each team member's
+  login directly in Settings (email + a temporary password they share with
+  that person), rather than sending an invite link.
 - Menu item photos are CSS/icon placeholders, not real photos — see
   `SETUP_TODO.md` item 5 for why that's actually correct for now.
+- No rate-limiting on order creation — a very small, unhandled
+  business-logic edge case (not a security bug; RLS still scopes correctly),
+  acceptable for now.

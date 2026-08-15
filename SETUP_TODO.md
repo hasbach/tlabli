@@ -37,12 +37,19 @@ can run against a real database and send real WhatsApp orders.
    filling in `SUPABASE_SERVICE_ROLE_KEY`) to create real logins for the 7
    demo staff members already seeded in `04_seed.sql` — that script prints
    each email and the shared demo password when it finishes.
-7. Swap the mock reads in `lib/mock-data.ts` / `lib/menu.ts` for real Supabase
-   queries — every place that needs this is marked with a
-   `// TODO(supabase):` comment. `/dashboard`'s displayed data (menu, orders,
-   analytics, settings) still shows mock data regardless of who's logged in
-   until this happens — that's the next sub-project (owner-side data
-   wiring), not this one.
+7. Also paste and run `supabase/sql/06_orders.sql` — adds the `create_order`
+   RPC that storefront checkout calls to write real orders with a race-free
+   per-restaurant queue number.
+8. `/dashboard` (menu, orders, analytics, settings, team) and the storefront
+   (menu display, checkout, order tracking) now read and write this real
+   database — every owner sees and edits their own restaurant's actual data,
+   not `lib/mock-data.ts`.
+9. Enable Realtime for the `orders` table so the dashboard's kitchen queue
+   updates live without a reload: in Supabase Studio, go to Database →
+   Replication, and toggle on the `orders` table under the `supabase_realtime`
+   publication (or run `ALTER PUBLICATION supabase_realtime ADD TABLE orders;`
+   in the SQL Editor). Without this, order status changes and new orders still
+   work correctly — the dashboard just needs a manual reload to show them.
 
 ## 2. WhatsApp order notifications
 
