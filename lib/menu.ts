@@ -1,5 +1,6 @@
-import { getCategoriesForRestaurant, getItemsForCategory } from "./mock-data";
-import type { MenuCategory, MenuItem } from "./types";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { mapMenuCategoryRow, mapItemAddonRow, mapMenuItemRow, mapRestaurantRow } from "@/lib/supabase/mappers";
+import type { MenuCategory, MenuItem, Restaurant } from "./types";
 
 export interface MenuSection {
   category: MenuCategory;
@@ -7,14 +8,40 @@ export interface MenuSection {
 }
 
 /**
- * Builds the category -> items structure a template component renders.
- * Isolated here so template components never import lib/mock-data directly —
- * swap this one function for a Supabase query later and every template,
- * page, and preview keeps working unchanged.
+ * Builds the category -> items structure a template component renders, from
+ * the live Supabase project (public-read RLS on menu_categories/menu_items/
+ * item_addons — no session required, matches the storefront having no login).
  */
-export function getMenuSections(restaurantId: string): MenuSection[] {
-  return getCategoriesForRestaurant(restaurantId).map((category) => ({
+export async function getMenuSections(restaurantId: string): Promise<MenuSection[]> {
+  const supabase = createServerSupabaseClient();
+  const { data: categoryRows } = await supabase
+    .from("menu_categories")
+    .select("*")
+    .eq("restaurant_id", restaurantId)
+    .order("sort_order", { ascending: true });
+
+  const categories = (categoryRows ?? []).map(mapMenuCategoryRow);
+  const categoryIds = categories.map((c) => c.id);
+  if (categoryIds.length === 0) return [];
+
+  const { data: itemRows } = await supabase.from("menu_items").select("*").in("category_id", categoryIds);
+  const itemIds = (itemRows ?? []).map((r) => r.id as string);
+
+  const { data: addonRows } = itemIds.length
+    ? await supabase.from("item_addons").select("*").in("item_id", itemIds)
+    : { data: [] };
+
+  return categories.map((category) => ({
     category,
-    items: getItemsForCategory(category.id),
+    items: (itemRows ?? [])
+      .filter((row) => row.category_id === category.id)
+      .map((row) => mapMenuItemRow(row, (addonRows ?? []).filter((a) => a.item_id === row.id).map(mapItemAddonRow))),
   }));
+}
+
+export async function getRestaurantBySlug(slug: string): Promise<Restaurant | null> {
+  const supabase = createServerSupabaseClient();
+  const { data, error } = await supabase.from("restaurants").select("*").eq("slug", slug).maybeSingle();
+  if (error || !data) return null;
+  return mapRestaurantRow(data);
 }
