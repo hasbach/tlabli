@@ -1,26 +1,29 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { Phone, Truck } from "lucide-react";
-import { orders, getRestaurantBySlug, restaurants } from "@/lib/mock-data";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { mapOrderRow, mapRestaurantRow } from "@/lib/supabase/mappers";
 import { OrderStatusTimeline } from "@/components/storefront/order-status-timeline";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/currency";
 
-// TODO(supabase): look up the real order by id once orders are written to
-// the database on checkout, instead of this mock lookup.
-export default function OrderTrackingPage({ params }: { params: { orderId: string } }) {
-  const order = orders.find((o) => o.id === params.orderId) ?? orders[0];
-  const restaurant = restaurants.find((r) => r.id === order.restaurantId);
+export default async function OrderTrackingPage({ params }: { params: { orderId: string } }) {
+  const supabase = createServerSupabaseClient();
+  const { data: orderRow } = await supabase.from("orders").select("*").eq("id", params.orderId).maybeSingle();
+  if (!orderRow) notFound();
+  const order = mapOrderRow(orderRow);
+
+  const { data: restaurantRow } = await supabase
+    .from("restaurants")
+    .select("*")
+    .eq("id", order.restaurantId)
+    .maybeSingle();
+  const restaurant = restaurantRow ? mapRestaurantRow(restaurantRow) : null;
 
   return (
     <div className="min-h-screen bg-muted/40 px-4 py-10">
       <div className="mx-auto max-w-md">
-        {params.orderId !== order.id && (
-          <p className="mb-4 rounded-lg border border-dashed border-border bg-card px-3 py-2 text-center text-xs text-muted-foreground">
-            Demo preview — showing a sample order since &quot;{params.orderId}&quot; wasn&apos;t found.
-          </p>
-        )}
-
         <Card className="mb-5 p-5 text-center">
           <p className="text-sm text-muted-foreground">Order #{order.queueNumber}</p>
           <h1 className="text-xl font-bold">{restaurant?.name}</h1>
