@@ -21,10 +21,9 @@ before this is fully live for real customers.
 ## Stack
 
 Next.js (App Router) + TypeScript + Tailwind CSS + hand-rolled shadcn-style
-components + Radix UI primitives + Recharts. Supabase is wired up for auth
-(real login/signup); dashboard data is still mock — see `lib/mock-data.ts`
-and the `// TODO(supabase):` comments throughout for exactly where real
-data will plug in next.
+components + Radix UI primitives + Recharts. Supabase backs auth, the owner
+dashboard, and the storefront data layer — all menu, order, analytics,
+settings, and team data is real and scoped per restaurant.
 
 ## Getting started
 
