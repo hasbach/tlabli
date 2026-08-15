@@ -10,7 +10,14 @@
 -- `UPDATE ... RETURNING` takes a row lock on that restaurant for the
 -- duration of the transaction, so concurrent callers are serialized safely.
 
-alter table restaurants add column next_queue_number integer not null default 1;
+alter table restaurants add column if not exists next_queue_number integer not null default 1;
+
+-- Real restaurants already have real orders with existing queue numbers by
+-- the time this migration runs. Backfill each restaurant's counter to one
+-- past its highest existing queue_number so the next order issued doesn't
+-- collide with (or sort above) orders already placed. Safe to re-run.
+update restaurants r set next_queue_number =
+  coalesce((select max(o.queue_number) + 1 from orders o where o.restaurant_id = r.id), 1);
 
 -- restaurants' own RLS ("staff update restaurants") would block an anonymous
 -- checkout from incrementing next_queue_number — SECURITY DEFINER is this

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { mapStaffUserRow } from "@/lib/supabase/mappers";
+import { getCurrentRestaurant } from "@/lib/dashboard/current-restaurant";
 import type { StaffRole, StaffUser } from "@/lib/types";
 
 export type ActionResult<T> = { error: string } | { data: T };
@@ -18,6 +19,11 @@ export interface NewStaffInput {
 }
 
 export async function addStaffMember(input: NewStaffInput): Promise<ActionResult<StaffUser>> {
+  const current = await getCurrentRestaurant();
+  if (!current || current.restaurant.id !== input.restaurantId) {
+    return { error: "Not authorized" };
+  }
+
   const admin = createAdminSupabaseClient();
 
   const { data: created, error: createError } = await admin.auth.admin.createUser({

@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { getCurrentRestaurant } from "@/lib/dashboard/current-restaurant";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { mapOrderRow } from "@/lib/supabase/mappers";
+import { beirutStartOfDay } from "@/lib/beirut-time";
 
 export default async function OrdersPage() {
   const current = await getCurrentRestaurant();
@@ -13,14 +14,26 @@ export default async function OrdersPage() {
   const { restaurant } = current;
 
   const supabase = createServerSupabaseClient();
-  const { data: orderRows } = await supabase
-    .from("orders")
-    .select("*")
-    .eq("restaurant_id", restaurant.id)
-    .order("queue_number", { ascending: true });
+  const startOfTodayISO = beirutStartOfDay(new Date()).toISOString();
 
-  const orders = (orderRows ?? []).map(mapOrderRow);
-  const completed = orders.filter((o) => o.status === "completed" || o.status === "cancelled");
+  const [{ data: activeRows }, { data: completedRows }] = await Promise.all([
+    supabase
+      .from("orders")
+      .select("*")
+      .eq("restaurant_id", restaurant.id)
+      .not("status", "in", "(completed,cancelled)")
+      .order("queue_number", { ascending: true }),
+    supabase
+      .from("orders")
+      .select("*")
+      .eq("restaurant_id", restaurant.id)
+      .in("status", ["completed", "cancelled"])
+      .gte("created_at", startOfTodayISO)
+      .order("queue_number", { ascending: true }),
+  ]);
+
+  const orders = (activeRows ?? []).map(mapOrderRow);
+  const completed = (completedRows ?? []).map(mapOrderRow);
 
   return (
     <div className="mx-auto max-w-6xl">

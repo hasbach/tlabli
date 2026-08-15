@@ -230,7 +230,6 @@ export function CartDrawer({
                 Track your order
               </a>
             )}
-            <p className="text-xs text-muted-foreground">{t("previewNotice")}</p>
             <Button
               variant="outline"
               onClick={() => {

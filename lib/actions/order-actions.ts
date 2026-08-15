@@ -52,7 +52,13 @@ export async function createOrder(
     p_promo_code: input.promoCode ?? null,
   });
 
-  if (error || !data) return { error: error?.message ?? "Failed to place order" };
+  if (error || !data) {
+    console.error(
+      `createOrder failed for restaurant ${input.restaurantId}:`,
+      error?.message ?? "no data returned from create_order RPC"
+    );
+    return { error: error?.message ?? "Failed to place order" };
+  }
   const row = data as unknown as { id: string; queue_number: number };
   return { data: { id: row.id, queueNumber: row.queue_number } };
 }

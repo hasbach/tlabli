@@ -73,10 +73,6 @@ export function Sidebar({ restaurant }: { restaurant: Restaurant }) {
         <LogOut className="h-4 w-4" />
         Log out
       </button>
-
-      <div className="m-3 rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
-        This dashboard shows demo data for now, regardless of your login — see <span className="font-medium text-foreground">SETUP_TODO.md</span>.
-      </div>
     </aside>
   );
 }

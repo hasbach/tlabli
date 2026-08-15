@@ -1,12 +1,14 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { mapOrderRow } from "@/lib/supabase/mappers";
+import { beirutStartOfDay, beirutStartOfDaysAgo, beirutWeekdayShort, beirutHourLabel } from "@/lib/beirut-time";
 import type { AnalyticsSnapshot, Currency } from "@/lib/types";
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 export async function getAnalyticsSnapshot(restaurantId: string, currency: Currency): Promise<AnalyticsSnapshot> {
   const supabase = createServerSupabaseClient();
-  const sevenDaysAgo = new Date(Date.now() - 7 * DAY_MS).toISOString();
+  const now = new Date();
+  // Beirut midnight 6 days ago through now = exactly 7 distinct calendar
+  // days, so the same weekday name never buckets two different days.
+  const sevenDaysAgo = beirutStartOfDaysAgo(6, now).toISOString();
 
   const { data, error } = await supabase
     .from("orders")
@@ -28,8 +30,7 @@ export async function getAnalyticsSnapshot(restaurantId: string, currency: Curre
   if (error || !data) return empty;
 
   const orders = data.map(mapOrderRow).filter((o) => o.status !== "cancelled");
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfToday = beirutStartOfDay(now);
 
   const ordersToday = orders.filter((o) => new Date(o.createdAt) >= startOfToday);
   const totalSalesToday = ordersToday.reduce((sum, o) => sum + o.total, 0);
@@ -48,17 +49,14 @@ export async function getAnalyticsSnapshot(restaurantId: string, currency: Curre
 
   const trendByDay = new Map<string, number>();
   for (const o of orders) {
-    const day = new Date(o.createdAt).toLocaleDateString("en-US", { weekday: "short" });
+    const day = beirutWeekdayShort(new Date(o.createdAt));
     trendByDay.set(day, (trendByDay.get(day) ?? 0) + o.total);
   }
   const salesTrend = [...trendByDay.entries()].map(([date, sales]) => ({ date, sales }));
 
   const hourCounts = new Map<string, number>();
   for (const o of ordersToday) {
-    const hour = new Date(o.createdAt)
-      .toLocaleTimeString("en-US", { hour: "numeric" })
-      .toLowerCase()
-      .replace(" ", "");
+    const hour = beirutHourLabel(new Date(o.createdAt));
     hourCounts.set(hour, (hourCounts.get(hour) ?? 0) + 1);
   }
   const peakHours = [...hourCounts.entries()].map(([hour, orders]) => ({ hour, orders }));
