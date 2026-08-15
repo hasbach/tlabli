@@ -11,15 +11,18 @@ import { useCart } from "./cart-provider";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { formatMoney } from "@/lib/currency";
 import { buildWhatsAppLink, buildWhatsAppOrderMessage } from "@/lib/whatsapp";
+import { createOrder } from "@/lib/actions/order-actions";
 import type { Currency } from "@/lib/types";
 
 type OrderType = "delivery" | "pickup" | "table";
 
 export function CartDrawer({
+  restaurantId,
   restaurantName,
   whatsappNumber,
   currency,
 }: {
+  restaurantId: string;
   restaurantName: string;
   whatsappNumber: string;
   currency: Currency;
@@ -32,22 +35,27 @@ export function CartDrawer({
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [tableNumber, setTableNumber] = useState("");
+  const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   function handleOpenChange(open: boolean) {
     setIsOpen(open);
     if (!open) setStep("cart");
   }
 
-  function handleSubmitOrder() {
+  async function handleSubmitOrder() {
+    setSubmitting(true);
+    const orderItems = lines.map((l) => ({
+      itemId: l.itemId,
+      title: l.title,
+      quantity: l.quantity,
+      unitPrice: l.unitPrice,
+      addons: l.addons.map((a) => a.name),
+    }));
+
     const message = buildWhatsAppOrderMessage(
       {
-        items: lines.map((l) => ({
-          itemId: l.itemId,
-          title: l.title,
-          quantity: l.quantity,
-          unitPrice: l.unitPrice,
-          addons: l.addons.map((a) => a.name),
-        })),
+        items: orderItems,
         total: subtotal,
         currency,
         customerName: name || "Guest",
@@ -58,8 +66,26 @@ export function CartDrawer({
       },
       restaurantName
     );
+
+    // The wa.me link is today's real order record for the restaurant — it
+    // must open even if the database write below fails, so a Supabase outage
+    // never blocks a customer's order.
     const link = buildWhatsAppLink(whatsappNumber, message);
     if (typeof window !== "undefined") window.open(link, "_blank", "noopener,noreferrer");
+
+    const result = await createOrder({
+      restaurantId,
+      customerName: name || "Guest",
+      customerPhone: phone,
+      orderType,
+      tableNumber: orderType === "table" ? tableNumber : undefined,
+      address: orderType === "delivery" ? address : undefined,
+      items: orderItems,
+      total: subtotal,
+      currency,
+    });
+    setSubmitting(false);
+    if ("data" in result) setPlacedOrderId(result.data.id);
     setStep("done");
   }
 
@@ -186,8 +212,8 @@ export function CartDrawer({
               <span>{formatMoney(subtotal, currency)}</span>
             </div>
 
-            <Button size="lg" onClick={handleSubmitOrder} disabled={!name || !phone} className="w-full">
-              {t("placeOrder")}
+            <Button size="lg" onClick={handleSubmitOrder} disabled={!name || !phone || submitting} className="w-full">
+              {submitting ? "Placing…" : t("placeOrder")}
             </Button>
             <p className="text-center text-xs text-muted-foreground">{t("previewNotice")}</p>
           </div>
@@ -199,12 +225,18 @@ export function CartDrawer({
               <ShoppingBag className="h-7 w-7 text-success" />
             </div>
             <p className="font-medium">{t("orderPlaced")}</p>
+            {placedOrderId && (
+              <a href={`/order/${placedOrderId}`} className="text-sm text-primary underline">
+                Track your order
+              </a>
+            )}
             <p className="text-xs text-muted-foreground">{t("previewNotice")}</p>
             <Button
               variant="outline"
               onClick={() => {
                 clear();
                 setStep("cart");
+                setPlacedOrderId(null);
                 setIsOpen(false);
               }}
             >

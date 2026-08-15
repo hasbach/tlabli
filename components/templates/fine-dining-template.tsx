@@ -49,7 +49,7 @@ function FineDiningBody({ restaurant, sections }: { restaurant: Restaurant; sect
         {t("poweredBy")} <span className="font-semibold text-foreground">Tlabli</span>
       </footer>
 
-      <CartDrawer restaurantName={restaurant.name} whatsappNumber={restaurant.whatsappNumber} currency={restaurant.currency} />
+      <CartDrawer restaurantId={restaurant.id} restaurantName={restaurant.name} whatsappNumber={restaurant.whatsappNumber} currency={restaurant.currency} />
     </div>
   );
 }
