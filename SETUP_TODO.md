@@ -20,7 +20,8 @@ can run against a real database and send real WhatsApp orders.
    shows, and add the signup bootstrap RPC that onboarding calls.
 3. Copy the project URL and anon key into `.env.local` (see `.env.example`),
    and set `PLATFORM_ADMIN_EMAILS` to your own email (comma-separated if
-   more than one) so `/admin` recognizes you once you log in.
+   more than one) so `/admin` recognizes you once you log in. This is only
+   half of admin setup — also see step 8 below.
 4. In your Supabase project, go to Authentication → Providers → Email and
    turn off "Confirm email." With it on, `supabase.auth.signUp()` won't
    return a session until the user clicks a confirmation link, and the
@@ -40,11 +41,20 @@ can run against a real database and send real WhatsApp orders.
 7. Also paste and run `supabase/sql/06_orders.sql` — adds the `create_order`
    RPC that storefront checkout calls to write real orders with a race-free
    per-restaurant queue number.
-8. `/dashboard` (menu, orders, analytics, settings, team) and the storefront
-   (menu display, checkout, order tracking) now read and write this real
-   database — every owner sees and edits their own restaurant's actual data,
-   not `lib/mock-data.ts`.
-9. Enable Realtime for the `orders` table so the dashboard's kitchen queue
+8. Also paste and run `supabase/sql/07_admin.sql` — adds the `platform_admins`
+   table and `is_platform_admin()` RLS policies that let `/admin` read and
+   manage every tenant. Then, in Supabase Studio's Table Editor, add one row
+   to `platform_admins` for **every** email already in `PLATFORM_ADMIN_EMAILS`
+   (see step 3) — these are two independent lists that must be kept in sync
+   by hand: the env var controls who can *reach* `/admin` at all, this table
+   controls what an authenticated request can actually read or write once
+   there. If you skip this, `/admin` will load a "not fully set up as a
+   platform admin yet" message instead of the tenant list.
+9. `/dashboard` (menu, orders, analytics, settings, team), the storefront
+   (menu display, checkout, order tracking), and `/admin` (every tenant's
+   plan, status, and billing history) now read and write this real database —
+   nothing left reads `lib/mock-data.ts`.
+10. Enable Realtime for the `orders` table so the dashboard's kitchen queue
    updates live without a reload: in Supabase Studio, go to Database →
    Replication, and toggle on the `orders` table under the `supabase_realtime`
    publication (or run `ALTER PUBLICATION supabase_realtime ADD TABLE orders;`
@@ -72,10 +82,10 @@ To upgrade to fully automatic notifications (no customer action required):
 3. Add your Supabase Storage hostname to `next.config.mjs` under
    `images.remotePatterns` once photo uploads are live.
 4. `/admin` is now gated behind real login plus the `PLATFORM_ADMIN_EMAILS`
-   allowlist (see section 1) — but that allowlist is the only thing standing
-   between the public internet and every tenant's billing data once you
-   connect a real domain, so double-check it only lists emails you actually
-   trust before going live.
+   allowlist (see section 1) and the `platform_admins` table/RLS policies
+   (see section 1, step 8) — double-check both lists only contain emails you
+   actually trust before you connect a real domain, since together they're
+   what stands between the public internet and every tenant's billing data.
 
 ## 4. Collecting your own subscription payments
 
@@ -83,8 +93,9 @@ Per the pricing model in `PROJECT_INSTRUCTIONS.md`, billing is manual:
 
 1. Set up an OMT and/or Whish Money account to receive owner payments.
 2. Use the `/admin` panel to record payment confirmations and activate
-   accounts (mock data only for now — see section 1.7; the panel itself is
-   gated behind real login, see section 3).
+   accounts — this is real now (see section 1, step 8); the panel itself is
+   gated behind real login plus the `PLATFORM_ADMIN_EMAILS`/`platform_admins`
+   allowlist (see section 3).
 
 ## 5. Content
 
@@ -102,12 +113,12 @@ Per the pricing model in `PROJECT_INSTRUCTIONS.md`, billing is manual:
 - Dual currency ($ / L.L.) display throughout.
 - Arabic (RTL), English, and French storefront language switching.
 - Per-item availability toggle + time-window scheduling.
-- Platform admin panel (`/admin`) for managing tenant plan/status/billing,
-  and per-restaurant team/staff role management in Settings — mock data
-  only, but gated behind real login and the `PLATFORM_ADMIN_EMAILS`
-  allowlist.
+- Platform admin panel (`/admin`) for managing tenant plan/status/billing —
+  real, cross-tenant Supabase data, gated behind real login, the
+  `PLATFORM_ADMIN_EMAILS` allowlist, and RLS (`platform_admins` /
+  `is_platform_admin()`) — and per-restaurant team/staff role management in
+  Settings.
 - Real login (`/login`), signup (`/onboarding`), and logout — `/dashboard`
   and `/admin` are gated behind an authenticated session via `middleware.ts`,
-  though `/dashboard`'s displayed data still shows mock data regardless of
-  who's logged in (see item 1.7 above).
+  and both now read and write real Supabase data for every logged-in user.
 - Design system documented in `design-system/tlabli/MASTER.md`.

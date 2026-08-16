@@ -7,23 +7,29 @@ research this app is built from.
 
 ## Status
 
-Frontend + a live Supabase backend for auth, the owner dashboard, and the
-storefront. `/dashboard` (menu builder, orders, analytics, settings, team)
-and the storefront (menu display, checkout, order tracking) all read and
-write real data scoped to the logged-in owner's own restaurant — no more
-`lib/mock-data.ts`. `/login`, `/onboarding`, `/dashboard`, and `/admin` all
-require `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` to be
-set (see `.env.local` / `.env.example`) — without them those routes fail to
-build or render. `/admin` itself is still mock data (see Known limitations).
-See `SETUP_TODO.md` for the remaining steps (WhatsApp Cloud API, a domain)
-before this is fully live for real customers.
+Frontend + a live Supabase backend for auth, the owner dashboard, the
+storefront, and the platform admin panel. `/dashboard` (menu builder, orders,
+analytics, settings, team), the storefront (menu display, checkout, order
+tracking), and `/admin` (every tenant's plan/status/billing) all read and
+write real data — nothing left reads `lib/mock-data.ts`. `/admin` reaches
+across every tenant via a small set of RLS policies gated by a
+`platform_admins` table + `is_platform_admin()` function
+(`supabase/sql/07_admin.sql`), kept in sync by hand with the
+`PLATFORM_ADMIN_EMAILS` env var that gates the route itself — see
+`docs/superpowers/specs/2026-08-17-admin-data-wiring-design.md` for why.
+`/login`, `/onboarding`, `/dashboard`, and `/admin` all require
+`NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` to be set (see
+`.env.local` / `.env.example`) — without them those routes fail to build or
+render. See `SETUP_TODO.md` for the remaining steps (WhatsApp Cloud API, a
+domain) before this is fully live for real customers.
 
 ## Stack
 
 Next.js (App Router) + TypeScript + Tailwind CSS + hand-rolled shadcn-style
 components + Radix UI primitives + Recharts. Supabase backs auth, the owner
-dashboard, and the storefront data layer — all menu, order, analytics,
-settings, and team data is real and scoped per restaurant.
+dashboard, the storefront, and the admin panel — all menu, order, analytics,
+settings, team, and cross-tenant billing data is real, RLS-scoped per
+restaurant (or, for `/admin`, per platform admin — see Known limitations).
 
 ## Getting started
 
@@ -49,8 +55,8 @@ Then open http://localhost:3000.
   WhatsApp checkout
 - `/onboarding` — restaurant type & template picker wizard
 - `/dashboard` — owner dashboard (menu builder, kitchen order queue,
-  analytics, settings incl. team/staff roles) — currently shows Burger
-  House's demo data
+  analytics, settings incl. team/staff roles) — shows the logged-in owner's
+  own real restaurant
 - `/login` — email/password login; `/dashboard` and `/admin` redirect here if you're not signed in
 - `/order/o-1001` — customer-facing order status tracking page
 - `/admin` — platform admin panel (all tenants, plan/status, manual billing)
@@ -86,9 +92,12 @@ components.
 
 ## Known limitations (by design, for now)
 
-- `/admin` (the platform admin panel) still shows mock data — every RLS
-  policy scopes to a restaurant's own staff, with no cross-tenant read path
-  yet for the admin panel; that's a future sub-project.
+- `/admin`'s cross-tenant access depends on two independently-maintained
+  admin allowlists (the `PLATFORM_ADMIN_EMAILS` env var, and the
+  `platform_admins` table added by `supabase/sql/07_admin.sql`) — adding a
+  new platform admin means updating both, by hand, in two different places.
+  See `docs/superpowers/specs/2026-08-17-admin-data-wiring-design.md` for why
+  this tradeoff was chosen over a single service-role-backed admin client.
 - No staff self-service invite flow — the owner creates each team member's
   login directly in Settings (email + a temporary password they share with
   that person), rather than sending an invite link.
