@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { updateTenantPlanStatus, recordSubscriptionPayment } from "@/lib/actions/admin-actions";
 
 const STATUS_LABEL: Record<Restaurant["status"], string> = {
   trial: "Trial",
@@ -35,14 +36,6 @@ const PLAN_LABEL: Record<Restaurant["planId"], string> = {
 const selectClass =
   "flex h-11 w-full rounded-lg border border-input bg-background px-3.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
-type ManagedFields = {
-  status: Restaurant["status"];
-  planId: Restaurant["planId"];
-  periodStart: string;
-  periodEnd: string;
-  paymentProofRef: string;
-};
-
 export function TenantTable({
   initialRestaurants,
   initialSubscriptions,
@@ -55,6 +48,9 @@ export function TenantTable({
   const [managingId, setManagingId] = useState<string | null>(null);
 
   const managing = restaurants.find((r) => r.id === managingId) ?? null;
+  // subscriptions is ordered by created_at desc (app/admin/page.tsx), and
+  // stays that way here (new rows are prepended, never appended) — so the
+  // first match is always the tenant's latest billing period.
   const managingSub = subscriptions.find((s) => s.restaurantId === managingId) ?? null;
 
   const total = restaurants.length;
@@ -64,24 +60,12 @@ export function TenantTable({
     .map((p) => `${restaurants.filter((r) => r.planId === p).length} ${PLAN_LABEL[p]}`)
     .join(" · ");
 
-  function saveManaging(updated: ManagedFields) {
-    if (!managingId) return;
-    setRestaurants((prev) =>
-      prev.map((r) => (r.id === managingId ? { ...r, status: updated.status, planId: updated.planId } : r))
-    );
-    setSubscriptions((prev) =>
-      prev.map((s) =>
-        s.restaurantId === managingId
-          ? {
-              ...s,
-              periodStart: updated.periodStart,
-              periodEnd: updated.periodEnd,
-              paymentProofRef: updated.paymentProofRef || undefined,
-            }
-          : s
-      )
-    );
-    setManagingId(null);
+  function handlePlanStatusSaved(updated: Restaurant) {
+    setRestaurants((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+  }
+
+  function handlePaymentRecorded(inserted: Subscription) {
+    setSubscriptions((prev) => [inserted, ...prev]);
   }
 
   return (
@@ -136,8 +120,9 @@ export function TenantTable({
             <ManageTenantForm
               restaurant={managing}
               subscription={managingSub}
-              onSave={saveManaging}
-              onCancel={() => setManagingId(null)}
+              onPlanStatusSaved={handlePlanStatusSaved}
+              onPaymentRecorded={handlePaymentRecorded}
+              onClose={() => setManagingId(null)}
             />
           )}
         </SheetContent>
@@ -149,19 +134,61 @@ export function TenantTable({
 function ManageTenantForm({
   restaurant,
   subscription,
-  onSave,
-  onCancel,
+  onPlanStatusSaved,
+  onPaymentRecorded,
+  onClose,
 }: {
   restaurant: Restaurant;
   subscription: Subscription | null;
-  onSave: (updated: ManagedFields) => void;
-  onCancel: () => void;
+  onPlanStatusSaved: (updated: Restaurant) => void;
+  onPaymentRecorded: (inserted: Subscription) => void;
+  onClose: () => void;
 }) {
   const [status, setStatus] = useState(restaurant.status);
   const [planId, setPlanId] = useState(restaurant.planId);
+  const [planSaving, setPlanSaving] = useState(false);
+  const [planSaved, setPlanSaved] = useState(false);
+  const [planError, setPlanError] = useState<string | null>(null);
+
   const [periodStart, setPeriodStart] = useState(subscription?.periodStart ?? "");
   const [periodEnd, setPeriodEnd] = useState(subscription?.periodEnd ?? "");
   const [paymentProofRef, setPaymentProofRef] = useState(subscription?.paymentProofRef ?? "");
+  const [paymentSaving, setPaymentSaving] = useState(false);
+  const [paymentSaved, setPaymentSaved] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+
+  async function savePlanStatus() {
+    setPlanSaving(true);
+    setPlanError(null);
+    setPlanSaved(false);
+    const result = await updateTenantPlanStatus(restaurant.id, { planId, status });
+    setPlanSaving(false);
+    if ("error" in result) {
+      setPlanError(result.error);
+      return;
+    }
+    onPlanStatusSaved(result.data);
+    setPlanSaved(true);
+  }
+
+  async function savePayment() {
+    setPaymentSaving(true);
+    setPaymentError(null);
+    setPaymentSaved(false);
+    const result = await recordSubscriptionPayment({
+      restaurantId: restaurant.id,
+      periodStart,
+      periodEnd,
+      paymentProofRef: paymentProofRef || undefined,
+    });
+    setPaymentSaving(false);
+    if ("error" in result) {
+      setPaymentError(result.error);
+      return;
+    }
+    onPaymentRecorded(result.data);
+    setPaymentSaved(true);
+  }
 
   return (
     <>
@@ -169,64 +196,87 @@ function ManageTenantForm({
         <SheetTitle>{restaurant.name}</SheetTitle>
       </SheetHeader>
 
-      <div className="mt-4 flex flex-col gap-4">
-        <div>
-          <Label htmlFor="mt-status">Status</Label>
-          <select
-            id="mt-status"
-            value={status}
-            onChange={(e) => setStatus(e.target.value as Restaurant["status"])}
-            className={selectClass}
-          >
-            <option value="trial">Trial</option>
-            <option value="active">Active</option>
-            <option value="past_due">Past due</option>
-            <option value="inactive">Inactive</option>
-          </select>
-        </div>
-
-        <div>
-          <Label htmlFor="mt-plan">Plan</Label>
-          <select
-            id="mt-plan"
-            value={planId}
-            onChange={(e) => setPlanId(e.target.value as Restaurant["planId"])}
-            className={selectClass}
-          >
-            <option value="free">Free</option>
-            <option value="basic">Basic</option>
-            <option value="pro">Pro</option>
-            <option value="custom">Custom</option>
-          </select>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
+      <div className="mt-4 flex flex-col gap-6">
+        <div className="flex flex-col gap-4 border-b border-border pb-6">
+          <p className="text-sm font-semibold">Plan &amp; status</p>
           <div>
-            <Label htmlFor="mt-start">Period start</Label>
-            <Input id="mt-start" type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} />
+            <Label htmlFor="mt-status">Status</Label>
+            <select
+              id="mt-status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as Restaurant["status"])}
+              className={selectClass}
+            >
+              <option value="trial">Trial</option>
+              <option value="active">Active</option>
+              <option value="past_due">Past due</option>
+              <option value="inactive">Inactive</option>
+            </select>
           </div>
+
           <div>
-            <Label htmlFor="mt-end">Period end</Label>
-            <Input id="mt-end" type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} />
+            <Label htmlFor="mt-plan">Plan</Label>
+            <select
+              id="mt-plan"
+              value={planId}
+              onChange={(e) => setPlanId(e.target.value as Restaurant["planId"])}
+              className={selectClass}
+            >
+              <option value="free">Free</option>
+              <option value="basic">Basic</option>
+              <option value="pro">Pro</option>
+              <option value="custom">Custom</option>
+            </select>
           </div>
+
+          <div className="flex items-center justify-between">
+            <Button size="sm" onClick={savePlanStatus} disabled={planSaving}>
+              {planSaving ? "Saving…" : "Update plan & status"}
+            </Button>
+            {planSaved && <p className="text-sm text-success">Saved.</p>}
+          </div>
+          {planError && <p className="text-sm text-destructive">{planError}</p>}
         </div>
 
-        <div>
-          <Label htmlFor="mt-proof">Payment proof reference</Label>
-          <Input
-            id="mt-proof"
-            value={paymentProofRef}
-            onChange={(e) => setPaymentProofRef(e.target.value)}
-            placeholder="e.g. OMT ref #12345"
-          />
+        <div className="flex flex-col gap-4">
+          <p className="text-sm font-semibold">Record a payment</p>
+          <p className="text-xs text-muted-foreground">
+            Adds a new billing period to this tenant&apos;s payment history — it doesn&apos;t edit a past
+            confirmation.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="mt-start">Period start</Label>
+              <Input id="mt-start" type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="mt-end">Period end</Label>
+              <Input id="mt-end" type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="mt-proof">Payment proof reference</Label>
+            <Input
+              id="mt-proof"
+              value={paymentProofRef}
+              onChange={(e) => setPaymentProofRef(e.target.value)}
+              placeholder="e.g. OMT ref #12345"
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Button size="sm" onClick={savePayment} disabled={paymentSaving || !periodStart || !periodEnd}>
+              {paymentSaving ? "Recording…" : "Record payment"}
+            </Button>
+            {paymentSaved && <p className="text-sm text-success">Recorded.</p>}
+          </div>
+          {paymentError && <p className="text-sm text-destructive">{paymentError}</p>}
         </div>
 
-        <div className="mt-2 flex justify-end gap-2">
-          <Button variant="ghost" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button onClick={() => onSave({ status, planId, periodStart, periodEnd, paymentProofRef })}>
-            Save changes
+        <div className="flex justify-end">
+          <Button variant="ghost" onClick={onClose}>
+            Close
           </Button>
         </div>
       </div>
