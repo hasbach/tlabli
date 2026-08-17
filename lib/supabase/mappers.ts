@@ -5,7 +5,7 @@
 // keeps working unchanged against these mapped objects.
 // -----------------------------------------------------------------------------
 
-import type { Restaurant, MenuCategory, MenuItem, ItemAddon, Order, OrderLineItem, StaffUser, Subscription } from "@/lib/types";
+import type { Restaurant, MenuCategory, MenuItem, ItemAddon, Order, OrderLineItem, StaffUser, Subscription, WhatsAppSettings } from "@/lib/types";
 
 export function mapRestaurantRow(row: Record<string, unknown>): Restaurant {
   return {
@@ -96,5 +96,14 @@ export function mapSubscriptionRow(row: Record<string, unknown>): Subscription {
     periodStart: row.period_start as string,
     periodEnd: row.period_end as string,
     paymentProofRef: (row.payment_proof_ref as string) ?? undefined,
+  };
+}
+
+export function mapWhatsAppSettingsRow(row: Record<string, unknown>): WhatsAppSettings {
+  return {
+    restaurantId: row.restaurant_id as string,
+    mode: row.mode as WhatsAppSettings["mode"],
+    ownAccessToken: (row.own_access_token as string) ?? undefined,
+    ownPhoneNumberId: (row.own_phone_number_id as string) ?? undefined,
   };
 }

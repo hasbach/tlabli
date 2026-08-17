@@ -145,3 +145,10 @@ export interface AnalyticsSnapshot {
   salesTrend: { date: string; sales: number }[];
   peakHours: { hour: string; orders: number }[];
 }
+
+export interface WhatsAppSettings {
+  restaurantId: string;
+  mode: "tlabli" | "own";
+  ownAccessToken?: string;
+  ownPhoneNumberId?: string;
+}

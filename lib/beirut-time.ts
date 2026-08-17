@@ -30,6 +30,14 @@ export function beirutStartOfDaysAgo(daysAgo: number, now: Date = new Date()): D
   return new Date(beirutStartOfDay(now).getTime() - daysAgo * DAY_MS);
 }
 
+/** ISO instant for the start (00:00:00, day 1) of the Beirut calendar month containing `date`. */
+export function beirutStartOfMonth(date: Date): Date {
+  const shifted = new Date(date.getTime() + BEIRUT_OFFSET_MS);
+  const y = shifted.getUTCFullYear();
+  const m = shifted.getUTCMonth();
+  return new Date(Date.UTC(y, m, 1) - BEIRUT_OFFSET_MS);
+}
+
 /** Short weekday label ("Mon", "Tue", ...) for `date`, using the Beirut calendar day. */
 export function beirutWeekdayShort(date: Date): string {
   return new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Beirut", weekday: "short" }).format(date);
