@@ -39,9 +39,11 @@ const selectClass =
 export function TenantTable({
   initialRestaurants,
   initialSubscriptions,
+  whatsappUsageByRestaurant,
 }: {
   initialRestaurants: Restaurant[];
   initialSubscriptions: Subscription[];
+  whatsappUsageByRestaurant: Record<string, number>;
 }) {
   const [restaurants, setRestaurants] = useState(initialRestaurants);
   const [subscriptions, setSubscriptions] = useState(initialSubscriptions);
@@ -120,6 +122,7 @@ export function TenantTable({
             <ManageTenantForm
               restaurant={managing}
               subscription={managingSub}
+              whatsappMessagesThisMonth={whatsappUsageByRestaurant[managing.id] ?? 0}
               onPlanStatusSaved={handlePlanStatusSaved}
               onPaymentRecorded={handlePaymentRecorded}
               onClose={() => setManagingId(null)}
@@ -134,12 +137,14 @@ export function TenantTable({
 function ManageTenantForm({
   restaurant,
   subscription,
+  whatsappMessagesThisMonth,
   onPlanStatusSaved,
   onPaymentRecorded,
   onClose,
 }: {
   restaurant: Restaurant;
   subscription: Subscription | null;
+  whatsappMessagesThisMonth: number;
   onPlanStatusSaved: (updated: Restaurant) => void;
   onPaymentRecorded: (inserted: Subscription) => void;
   onClose: () => void;
@@ -236,6 +241,7 @@ function ManageTenantForm({
             {planSaved && <p className="text-sm text-success">Saved.</p>}
           </div>
           {planError && <p className="text-sm text-destructive">{planError}</p>}
+          <p className="text-xs text-muted-foreground">WhatsApp messages this month: {whatsappMessagesThisMonth}</p>
         </div>
 
         <div className="flex flex-col gap-4">

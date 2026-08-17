@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { mapRestaurantRow, mapSubscriptionRow } from "@/lib/supabase/mappers";
+import { beirutStartOfMonth } from "@/lib/beirut-time";
 import { TenantTable } from "@/components/admin/tenant-table";
 
 export default async function AdminPage() {
@@ -31,11 +32,17 @@ export default async function AdminPage() {
     );
   }
 
-  const [{ data: restaurantRows, error: restaurantsError }, { data: subscriptionRows, error: subscriptionsError }] =
-    await Promise.all([
-      supabase.from("restaurants").select("*").order("name"),
-      supabase.from("subscriptions").select("*").order("created_at", { ascending: false }),
-    ]);
+  const startOfMonthISO = beirutStartOfMonth(new Date()).toISOString();
+
+  const [
+    { data: restaurantRows, error: restaurantsError },
+    { data: subscriptionRows, error: subscriptionsError },
+    { data: whatsappLogRows },
+  ] = await Promise.all([
+    supabase.from("restaurants").select("*").order("name"),
+    supabase.from("subscriptions").select("*").order("created_at", { ascending: false }),
+    supabase.from("whatsapp_message_log").select("restaurant_id").eq("status", "sent").gte("created_at", startOfMonthISO),
+  ]);
 
   if (restaurantsError || subscriptionsError) {
     return (
@@ -48,13 +55,23 @@ export default async function AdminPage() {
   const restaurants = (restaurantRows ?? []).map(mapRestaurantRow);
   const subscriptions = (subscriptionRows ?? []).map(mapSubscriptionRow);
 
+  const whatsappUsageByRestaurant: Record<string, number> = {};
+  for (const row of whatsappLogRows ?? []) {
+    const id = row.restaurant_id as string;
+    whatsappUsageByRestaurant[id] = (whatsappUsageByRestaurant[id] ?? 0) + 1;
+  }
+
   return (
     <div>
       <h1 className="text-2xl font-extrabold tracking-tight">Restaurants</h1>
       <p className="mb-6 text-sm text-muted-foreground">
         All tenants on the platform. Manage plan, billing status, and payment confirmation.
       </p>
-      <TenantTable initialRestaurants={restaurants} initialSubscriptions={subscriptions} />
+      <TenantTable
+        initialRestaurants={restaurants}
+        initialSubscriptions={subscriptions}
+        whatsappUsageByRestaurant={whatsappUsageByRestaurant}
+      />
     </div>
   );
 }
