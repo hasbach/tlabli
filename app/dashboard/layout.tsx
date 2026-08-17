@@ -6,11 +6,19 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const current = await getCurrentRestaurant();
   if (!current) {
-    // An authenticated session with no matching staff_users row (e.g. a
-    // removed team member) must not linger — /login's own effect redirects
-    // any authenticated session straight back to /dashboard, which would
-    // otherwise trap the user in a redirect loop with no way to log out.
     const supabase = createServerSupabaseClient();
+
+    // A platform admin has no staff_users row by design (see
+    // supabase/sql/07_admin.sql) — send them to /admin instead of treating
+    // this like an orphaned session.
+    const { data: isAdmin } = await supabase.rpc("is_platform_admin");
+    if (isAdmin) redirect("/admin");
+
+    // Otherwise this is an authenticated session with no matching staff_users
+    // row (e.g. a removed team member) that must not linger — /login's own
+    // effect redirects any authenticated session straight back to
+    // /dashboard, which would otherwise trap the user in a redirect loop
+    // with no way to log out.
     await supabase.auth.signOut();
     redirect("/login");
   }
