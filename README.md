@@ -106,3 +106,8 @@ components.
 - No rate-limiting on order creation — a very small, unhandled
   business-logic edge case (not a security bug; RLS still scopes correctly),
   acceptable for now.
+- WhatsApp Cloud API notifications are fully built (`lib/whatsapp-cloud-api.ts`)
+  but not yet live — `WHATSAPP_CLOUD_API_TOKEN`/`WHATSAPP_CLOUD_API_PHONE_NUMBER_ID`
+  are unset and `supabase/sql/08_whatsapp.sql` hasn't been applied yet (see
+  SETUP_TODO.md item 2). Every checkout currently falls back to the `wa.me`
+  deep link, which is the correct, safe behavior for this state — not a bug.

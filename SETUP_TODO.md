@@ -65,15 +65,40 @@ can run against a real database and send real WhatsApp orders.
 
 The app already works today via a `wa.me` deep link (see `lib/whatsapp.ts`) —
 no approval needed, orders open pre-filled in the customer's own WhatsApp.
+The code for fully automatic Cloud API notifications is now built (see
+`docs/superpowers/specs/2026-08-17-whatsapp-cloud-api-design.md`) — the deep
+link stays as the automatic fallback whenever Cloud API isn't set up, is
+over its monthly cap, or fails. These steps are what's left for you:
 
-To upgrade to fully automatic notifications (no customer action required):
-
-1. Create a Meta Business account and a WhatsApp Business app.
-2. Go through Meta's business verification (this has a lead time — start
+1. Paste and run `supabase/sql/08_whatsapp.sql` in Supabase Studio's SQL
+   Editor — adds the `whatsapp_settings` and `whatsapp_message_log` tables
+   this feature depends on.
+2. Create a Meta Business account and a WhatsApp Business app for Tlabli's
+   own shared number.
+3. Go through Meta's business verification (this has a lead time — start
    early).
-3. Get a permanent access token and phone number ID, add them to `.env.local`.
-4. Replace the `wa.me` link flow with a server route that calls the WhatsApp
-   Cloud API directly.
+4. Get a permanent access token and phone number ID, add them to
+   `WHATSAPP_CLOUD_API_TOKEN` / `WHATSAPP_CLOUD_API_PHONE_NUMBER_ID` in
+   `.env.local` (already scaffolded in `.env.example`).
+5. Submit this exact message template for Meta's approval on Tlabli's
+   WhatsApp Business Account (required for any business-initiated message —
+   restaurants never message Tlabli's number first, so there's no open
+   session to send free-form text into):
+   - Name: `new_order_notification`
+   - Category: `UTILITY`
+   - Language: `en`
+   - Body: `🔔 New order at {{1}}` / (blank line) / `{{2}}` / (blank line) /
+     `Total: {{3}}` / `Customer: {{4}}` / `{{5}}`
+6. Restaurants can instead bring their own Meta Business API credentials
+   (unmetered, since Meta bills them directly instead of Tlabli) via a new
+   "WhatsApp notifications" card in their own `/dashboard/settings` — each
+   one needs the same template approved on their own WhatsApp Business
+   Account before their notifications will send.
+7. Tlabli's shared number is capped per plan to control Meta's per-message
+   cost to you: Free 0/month (deep link only), Basic 20/month, Pro
+   50/month, Custom unlimited. Usage per tenant is visible in `/admin` —
+   billing for actual usage stays a manual decision, same as every other
+   subscription charge today.
 
 ## 3. Domain & hosting
 
