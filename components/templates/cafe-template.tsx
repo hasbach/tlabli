@@ -12,7 +12,15 @@ import { OpenBadge } from "@/components/storefront/open-badge";
 import { MenuItemCard } from "@/components/storefront/menu-item-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-function CafeBody({ restaurant, sections }: { restaurant: Restaurant; sections: MenuSection[] }) {
+function CafeBody({
+  restaurant,
+  sections,
+  whatsappCloudApiAvailable,
+}: {
+  restaurant: Restaurant;
+  sections: MenuSection[];
+  whatsappCloudApiAvailable: boolean;
+}) {
   const { t } = useLocale();
 
   return (
@@ -75,17 +83,31 @@ function CafeBody({ restaurant, sections }: { restaurant: Restaurant; sections: 
         {t("poweredBy")} <span className="font-semibold text-foreground">Tlabli</span>
       </footer>
 
-      <CartDrawer restaurantId={restaurant.id} restaurantName={restaurant.name} whatsappNumber={restaurant.whatsappNumber} currency={restaurant.currency} />
+      <CartDrawer
+        restaurantId={restaurant.id}
+        restaurantName={restaurant.name}
+        whatsappNumber={restaurant.whatsappNumber}
+        currency={restaurant.currency}
+        whatsappCloudApiAvailable={whatsappCloudApiAvailable}
+      />
     </div>
   );
 }
 
-export function CafeTemplate({ restaurant, sections }: { restaurant: Restaurant; sections: MenuSection[] }) {
+export function CafeTemplate({
+  restaurant,
+  sections,
+  whatsappCloudApiAvailable,
+}: {
+  restaurant: Restaurant;
+  sections: MenuSection[];
+  whatsappCloudApiAvailable: boolean;
+}) {
   return (
     <div className="theme-cafe">
       <LocaleProvider availableLocales={restaurant.languages} defaultLocale={restaurant.languages[0]}>
         <CartProvider currency={restaurant.currency}>
-          <CafeBody restaurant={restaurant} sections={sections} />
+          <CafeBody restaurant={restaurant} sections={sections} whatsappCloudApiAvailable={whatsappCloudApiAvailable} />
         </CartProvider>
       </LocaleProvider>
     </div>

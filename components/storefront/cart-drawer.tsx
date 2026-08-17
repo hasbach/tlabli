@@ -21,11 +21,13 @@ export function CartDrawer({
   restaurantName,
   whatsappNumber,
   currency,
+  whatsappCloudApiAvailable,
 }: {
   restaurantId: string;
   restaurantName: string;
   whatsappNumber: string;
   currency: Currency;
+  whatsappCloudApiAvailable: boolean;
 }) {
   const { lines, subtotal, itemCount, updateQuantity, isOpen, setIsOpen, clear } = useCart();
   const { t } = useLocale();
@@ -67,11 +69,17 @@ export function CartDrawer({
       restaurantName
     );
 
-    // The wa.me link is today's real order record for the restaurant — it
-    // must open even if the database write below fails, so a Supabase outage
-    // never blocks a customer's order.
-    const link = buildWhatsAppLink(whatsappNumber, message);
-    if (typeof window !== "undefined") window.open(link, "_blank", "noopener,noreferrer");
+    // The wa.me link must open synchronously, before any await, so browsers
+    // don't block it as an unsolicited popup — this is why the
+    // whatsappCloudApiAvailable check below can't wait for createOrder's
+    // result. When Cloud API is expected to handle notification, skip the
+    // deep link; otherwise (not configured, over cap, or createOrder fails
+    // outright below) it's the only notification this order gets, so it
+    // must open even if the database write below fails.
+    if (!whatsappCloudApiAvailable) {
+      const link = buildWhatsAppLink(whatsappNumber, message);
+      if (typeof window !== "undefined") window.open(link, "_blank", "noopener,noreferrer");
+    }
 
     const result = await createOrder({
       restaurantId,

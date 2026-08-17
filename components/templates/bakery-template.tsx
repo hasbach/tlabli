@@ -11,7 +11,15 @@ import { LanguageSwitcher } from "@/components/storefront/language-switcher";
 import { OpenBadge } from "@/components/storefront/open-badge";
 import { MenuItemCard } from "@/components/storefront/menu-item-card";
 
-function BakeryBody({ restaurant, sections }: { restaurant: Restaurant; sections: MenuSection[] }) {
+function BakeryBody({
+  restaurant,
+  sections,
+  whatsappCloudApiAvailable,
+}: {
+  restaurant: Restaurant;
+  sections: MenuSection[];
+  whatsappCloudApiAvailable: boolean;
+}) {
   const { t } = useLocale();
 
   return (
@@ -83,17 +91,31 @@ function BakeryBody({ restaurant, sections }: { restaurant: Restaurant; sections
         {t("poweredBy")} <span className="font-semibold text-foreground">Tlabli</span>
       </footer>
 
-      <CartDrawer restaurantId={restaurant.id} restaurantName={restaurant.name} whatsappNumber={restaurant.whatsappNumber} currency={restaurant.currency} />
+      <CartDrawer
+        restaurantId={restaurant.id}
+        restaurantName={restaurant.name}
+        whatsappNumber={restaurant.whatsappNumber}
+        currency={restaurant.currency}
+        whatsappCloudApiAvailable={whatsappCloudApiAvailable}
+      />
     </div>
   );
 }
 
-export function BakeryTemplate({ restaurant, sections }: { restaurant: Restaurant; sections: MenuSection[] }) {
+export function BakeryTemplate({
+  restaurant,
+  sections,
+  whatsappCloudApiAvailable,
+}: {
+  restaurant: Restaurant;
+  sections: MenuSection[];
+  whatsappCloudApiAvailable: boolean;
+}) {
   return (
     <div className="theme-bakery">
       <LocaleProvider availableLocales={restaurant.languages} defaultLocale={restaurant.languages[0]}>
         <CartProvider currency={restaurant.currency}>
-          <BakeryBody restaurant={restaurant} sections={sections} />
+          <BakeryBody restaurant={restaurant} sections={sections} whatsappCloudApiAvailable={whatsappCloudApiAvailable} />
         </CartProvider>
       </LocaleProvider>
     </div>

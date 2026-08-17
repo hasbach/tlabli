@@ -10,7 +10,15 @@ import { LanguageSwitcher } from "@/components/storefront/language-switcher";
 import { OpenBadge } from "@/components/storefront/open-badge";
 import { FineDiningItemRow } from "./fine-dining-item-row";
 
-function FineDiningBody({ restaurant, sections }: { restaurant: Restaurant; sections: MenuSection[] }) {
+function FineDiningBody({
+  restaurant,
+  sections,
+  whatsappCloudApiAvailable,
+}: {
+  restaurant: Restaurant;
+  sections: MenuSection[];
+  whatsappCloudApiAvailable: boolean;
+}) {
   const { t } = useLocale();
 
   return (
@@ -49,17 +57,31 @@ function FineDiningBody({ restaurant, sections }: { restaurant: Restaurant; sect
         {t("poweredBy")} <span className="font-semibold text-foreground">Tlabli</span>
       </footer>
 
-      <CartDrawer restaurantId={restaurant.id} restaurantName={restaurant.name} whatsappNumber={restaurant.whatsappNumber} currency={restaurant.currency} />
+      <CartDrawer
+        restaurantId={restaurant.id}
+        restaurantName={restaurant.name}
+        whatsappNumber={restaurant.whatsappNumber}
+        currency={restaurant.currency}
+        whatsappCloudApiAvailable={whatsappCloudApiAvailable}
+      />
     </div>
   );
 }
 
-export function FineDiningTemplate({ restaurant, sections }: { restaurant: Restaurant; sections: MenuSection[] }) {
+export function FineDiningTemplate({
+  restaurant,
+  sections,
+  whatsappCloudApiAvailable,
+}: {
+  restaurant: Restaurant;
+  sections: MenuSection[];
+  whatsappCloudApiAvailable: boolean;
+}) {
   return (
     <div className="theme-fine-dining">
       <LocaleProvider availableLocales={restaurant.languages} defaultLocale={restaurant.languages[0]}>
         <CartProvider currency={restaurant.currency}>
-          <FineDiningBody restaurant={restaurant} sections={sections} />
+          <FineDiningBody restaurant={restaurant} sections={sections} whatsappCloudApiAvailable={whatsappCloudApiAvailable} />
         </CartProvider>
       </LocaleProvider>
     </div>

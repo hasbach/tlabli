@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getMenuSections, getRestaurantBySlug } from "@/lib/menu";
+import { getWhatsAppCloudApiAvailability } from "@/lib/whatsapp-cloud-api";
 import { TemplateRenderer } from "@/components/templates";
 
 export async function generateMetadata({ params }: { params: { restaurantSlug: string } }): Promise<Metadata> {
@@ -16,7 +17,12 @@ export default async function RestaurantStorefrontPage({ params }: { params: { r
   const restaurant = await getRestaurantBySlug(params.restaurantSlug);
   if (!restaurant) notFound();
 
-  const sections = await getMenuSections(restaurant.id);
+  const [sections, whatsappCloudApiAvailable] = await Promise.all([
+    getMenuSections(restaurant.id),
+    getWhatsAppCloudApiAvailability(restaurant.id, restaurant.planId),
+  ]);
 
-  return <TemplateRenderer restaurant={restaurant} sections={sections} />;
+  return (
+    <TemplateRenderer restaurant={restaurant} sections={sections} whatsappCloudApiAvailable={whatsappCloudApiAvailable} />
+  );
 }
