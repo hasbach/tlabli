@@ -48,6 +48,7 @@ export function CartDrawer({
 
   async function handleSubmitOrder() {
     setSubmitting(true);
+    setFallbackWhatsAppLink(null);
     const orderItems = lines.map((l) => ({
       itemId: l.itemId,
       title: l.title,
@@ -79,9 +80,13 @@ export function CartDrawer({
     // don't block it as an unsolicited popup — this is why the
     // whatsappCloudApiAvailable check below can't wait for createOrder's
     // result. When Cloud API is expected to handle notification, skip the
-    // deep link; otherwise (not configured, over cap, or createOrder fails
-    // outright below) it's the only notification this order gets, so it
-    // must open even if the database write below fails.
+    // deep link here; otherwise (not configured or over cap) it's the only
+    // notification this order gets, so it must open even if the database
+    // write below fails. If Cloud API was expected to handle it but
+    // createOrder fails outright (or Cloud API itself didn't notify), the
+    // result branch below falls back to this same link so the order still
+    // reaches the customer's confirmation screen with a way to notify the
+    // restaurant.
     if (!whatsappCloudApiAvailable) {
       if (typeof window !== "undefined") window.open(link, "_blank", "noopener,noreferrer");
     }
@@ -103,6 +108,11 @@ export function CartDrawer({
       if (whatsappCloudApiAvailable && !result.data.whatsappNotified) {
         setFallbackWhatsAppLink(link);
       }
+    } else if (whatsappCloudApiAvailable) {
+      // createOrder itself failed (e.g. a Supabase outage) — the deep link
+      // was already skipped above on the assumption Cloud API would handle
+      // notification, so it's this order's only remaining recourse.
+      setFallbackWhatsAppLink(link);
     }
     setStep("done");
   }
