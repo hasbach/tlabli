@@ -29,9 +29,7 @@ create policy "staff manage whatsapp_settings" on whatsapp_settings for all
 -- One row per Cloud API send attempt, not just successes — status
 -- distinguishes "we didn't try" (skipped_*) from "we tried and Meta
 -- rejected it" (failed), and only 'sent' rows count toward a restaurant's
--- monthly cap. No secret data lives here, so — unlike whatsapp_settings —
--- an anonymous insert policy is safe: checkout is anonymous, same as
--- "anyone insert orders" in 02_rls.sql.
+-- monthly cap.
 create table whatsapp_message_log (
   id uuid primary key default gen_random_uuid(),
   restaurant_id uuid not null references restaurants(id) on delete cascade,
@@ -48,4 +46,12 @@ create policy "staff read whatsapp_message_log" on whatsapp_message_log for sele
   using (is_staff_of(restaurant_id));
 create policy "platform admin read whatsapp_message_log" on whatsapp_message_log for select
   using (is_platform_admin());
-create policy "anyone insert whatsapp_message_log" on whatsapp_message_log for insert with check (true);
+
+-- No insert policy, intentionally. Unlike orders, every insert into this
+-- table goes through sendWhatsAppCloudApiNotification's service-role client
+-- (lib/whatsapp-cloud-api.ts), which bypasses RLS entirely — no anonymous
+-- or authenticated-role client ever inserts here. An "anyone insert" policy
+-- would grant nothing the app needs while letting anyone holding the public
+-- anon key insert forged status='sent' rows with an arbitrary restaurant_id,
+-- exhausting a competitor's monthly cap and corrupting the /admin usage
+-- figures. Do not add one.

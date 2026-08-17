@@ -44,21 +44,33 @@ export async function getWhatsAppCloudApiAvailability(
   restaurantId: string,
   planId: Restaurant["planId"]
 ): Promise<boolean> {
-  const admin = createAdminSupabaseClient();
-  const { data } = await admin.from("whatsapp_settings").select("*").eq("restaurant_id", restaurantId).maybeSingle();
-  const settings = data ? mapWhatsAppSettingsRow(data) : null;
+  try {
+    const admin = createAdminSupabaseClient();
+    const { data } = await admin.from("whatsapp_settings").select("*").eq("restaurant_id", restaurantId).maybeSingle();
+    const settings = data ? mapWhatsAppSettingsRow(data) : null;
 
-  if (settings?.mode === "own") {
-    return Boolean(settings.ownAccessToken && settings.ownPhoneNumberId);
+    if (settings?.mode === "own") {
+      return Boolean(settings.ownAccessToken && settings.ownPhoneNumberId);
+    }
+
+    if (!process.env.WHATSAPP_CLOUD_API_TOKEN || !process.env.WHATSAPP_CLOUD_API_PHONE_NUMBER_ID) return false;
+
+    const cap = PLAN_CAPS[planId];
+    if (cap === null) return true;
+    if (cap === 0) return false;
+    const sentThisMonth = await getSentCountThisMonth(restaurantId);
+    return sentThisMonth < cap;
+  } catch (err) {
+    console.error(`getWhatsAppCloudApiAvailability failed unexpectedly for restaurant ${restaurantId}:`, err);
+    return false;
   }
+}
 
-  if (!process.env.WHATSAPP_CLOUD_API_TOKEN || !process.env.WHATSAPP_CLOUD_API_PHONE_NUMBER_ID) return false;
-
-  const cap = PLAN_CAPS[planId];
-  if (cap === null) return true;
-  if (cap === 0) return false;
-  const sentThisMonth = await getSentCountThisMonth(restaurantId);
-  return sentThisMonth < cap;
+// Meta rejects template body parameters that contain newlines/tabs, runs of
+// more than 4 spaces, or exceed 1024 chars. Every element returned by
+// buildTemplateParams passes through this before being sent.
+function sanitizeTemplateParam(value: string): string {
+  return value.replace(/\s+/g, " ").trim().slice(0, 1024);
 }
 
 function buildTemplateParams(
@@ -67,7 +79,7 @@ function buildTemplateParams(
 ): string[] {
   const itemLines = order.items
     .map((i) => `${i.quantity}x ${i.title}${i.addons.length ? ` (${i.addons.join(", ")})` : ""}`)
-    .join("\n");
+    .join(" • ");
   const total = `${order.currency === "USD" ? "$" : ""}${order.total.toFixed(2)}${order.currency === "LBP" ? " L.L." : ""}`;
   const customer = `${order.customerName} (${order.customerPhone})`;
   const fulfillment =
@@ -77,7 +89,7 @@ function buildTemplateParams(
         ? `Delivery to: ${order.address ?? "-"}`
         : "Pickup";
 
-  return [restaurantName, itemLines, total, customer, fulfillment];
+  return [restaurantName, itemLines, total, customer, fulfillment].map(sanitizeTemplateParam);
 }
 
 async function callMetaCloudApi(
@@ -122,64 +134,74 @@ export async function sendWhatsAppCloudApiNotification(
   orderId: string,
   order: Pick<Order, "items" | "total" | "currency" | "customerName" | "customerPhone" | "orderType" | "tableNumber" | "address">
 ): Promise<{ sent: boolean }> {
-  const admin = createAdminSupabaseClient();
+  try {
+    const admin = createAdminSupabaseClient();
 
-  const [{ data: restaurantRow }, { data: settingsRow }] = await Promise.all([
-    admin.from("restaurants").select("name, whatsapp_number, plan_id").eq("id", restaurantId).maybeSingle(),
-    admin.from("whatsapp_settings").select("*").eq("restaurant_id", restaurantId).maybeSingle(),
-  ]);
+    const [{ data: restaurantRow }, { data: settingsRow }] = await Promise.all([
+      admin.from("restaurants").select("name, whatsapp_number, plan_id").eq("id", restaurantId).maybeSingle(),
+      admin.from("whatsapp_settings").select("*").eq("restaurant_id", restaurantId).maybeSingle(),
+    ]);
 
-  if (!restaurantRow) return { sent: false };
+    if (!restaurantRow) return { sent: false };
 
-  const restaurantName = restaurantRow.name as string;
-  const restaurantWhatsappNumber = restaurantRow.whatsapp_number as string;
-  const planId = restaurantRow.plan_id as Restaurant["planId"];
-  const settings = settingsRow ? mapWhatsAppSettingsRow(settingsRow) : null;
-  const mode = settings?.mode ?? "tlabli";
+    const restaurantName = restaurantRow.name as string;
+    const restaurantWhatsappNumber = restaurantRow.whatsapp_number as string;
+    const planId = restaurantRow.plan_id as Restaurant["planId"];
+    const settings = settingsRow ? mapWhatsAppSettingsRow(settingsRow) : null;
+    const mode = settings?.mode ?? "tlabli";
 
-  async function log(status: string, errorMessage?: string) {
-    await admin.from("whatsapp_message_log").insert({
-      restaurant_id: restaurantId,
-      order_id: orderId,
-      status,
-      error_message: errorMessage ?? null,
-    });
-  }
-
-  let accessToken: string | undefined;
-  let phoneNumberId: string | undefined;
-
-  if (mode === "own") {
-    accessToken = settings?.ownAccessToken;
-    phoneNumberId = settings?.ownPhoneNumberId;
-    if (!accessToken || !phoneNumberId) {
-      await log("skipped_not_configured");
-      return { sent: false };
+    async function log(status: string, errorMessage?: string) {
+      await admin.from("whatsapp_message_log").insert({
+        restaurant_id: restaurantId,
+        order_id: orderId,
+        status,
+        error_message: errorMessage ?? null,
+      });
     }
-  } else {
-    accessToken = process.env.WHATSAPP_CLOUD_API_TOKEN;
-    phoneNumberId = process.env.WHATSAPP_CLOUD_API_PHONE_NUMBER_ID;
-    if (!accessToken || !phoneNumberId) {
-      await log("skipped_not_configured");
-      return { sent: false };
-    }
-    const cap = PLAN_CAPS[planId];
-    if (cap !== null) {
-      const sentThisMonth = await getSentCountThisMonth(restaurantId);
-      if (sentThisMonth >= cap) {
-        await log("skipped_over_cap");
+
+    let accessToken: string | undefined;
+    let phoneNumberId: string | undefined;
+
+    if (mode === "own") {
+      accessToken = settings?.ownAccessToken;
+      phoneNumberId = settings?.ownPhoneNumberId;
+      if (!accessToken || !phoneNumberId) {
+        await log("skipped_not_configured");
         return { sent: false };
       }
+    } else {
+      accessToken = process.env.WHATSAPP_CLOUD_API_TOKEN;
+      phoneNumberId = process.env.WHATSAPP_CLOUD_API_PHONE_NUMBER_ID;
+      if (!accessToken || !phoneNumberId) {
+        await log("skipped_not_configured");
+        return { sent: false };
+      }
+      const cap = PLAN_CAPS[planId];
+      if (cap !== null) {
+        const sentThisMonth = await getSentCountThisMonth(restaurantId);
+        if (sentThisMonth >= cap) {
+          await log("skipped_over_cap");
+          return { sent: false };
+        }
+      }
     }
-  }
 
-  try {
-    const templateParams = buildTemplateParams(order, restaurantName);
-    await callMetaCloudApi(accessToken, phoneNumberId, restaurantWhatsappNumber, templateParams);
-    await log("sent");
-    return { sent: true };
+    try {
+      const templateParams = buildTemplateParams(order, restaurantName);
+      await callMetaCloudApi(accessToken, phoneNumberId, restaurantWhatsappNumber, templateParams);
+      await log("sent");
+      return { sent: true };
+    } catch (err) {
+      await log("failed", err instanceof Error ? err.message : "Unknown error");
+      return { sent: false };
+    }
   } catch (err) {
-    await log("failed", err instanceof Error ? err.message : "Unknown error");
+    // Outer safety net: covers failures before/around the inner try (e.g.
+    // createAdminSupabaseClient() throwing on a missing service-role key, or
+    // the initial Supabase queries failing). Do NOT attempt a log() insert
+    // here — the same client construction that may have failed is what the
+    // logger would use.
+    console.error(`sendWhatsAppCloudApiNotification failed unexpectedly for order ${orderId}:`, err);
     return { sent: false };
   }
 }

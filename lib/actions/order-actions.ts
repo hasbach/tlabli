@@ -38,7 +38,7 @@ export interface CreateOrderInput {
 
 export async function createOrder(
   input: CreateOrderInput
-): Promise<ActionResult<{ id: string; queueNumber: number }>> {
+): Promise<ActionResult<{ id: string; queueNumber: number; whatsappNotified: boolean }>> {
   const supabase = createServerSupabaseClient();
   const { data, error } = await supabase.rpc("create_order", {
     p_restaurant_id: input.restaurantId,
@@ -66,11 +66,13 @@ export async function createOrder(
   // succeeded by this point — sendWhatsAppCloudApiNotification is designed
   // to never throw, but this repo's rule is "never trust a call site not to
   // reject," so it's wrapped anyway.
+  let whatsappNotified = false;
   try {
-    await sendWhatsAppCloudApiNotification(input.restaurantId, row.id, input);
+    const result = await sendWhatsAppCloudApiNotification(input.restaurantId, row.id, input);
+    whatsappNotified = result.sent;
   } catch (err) {
     console.error(`sendWhatsAppCloudApiNotification threw unexpectedly for order ${row.id}:`, err);
   }
 
-  return { data: { id: row.id, queueNumber: row.queue_number } };
+  return { data: { id: row.id, queueNumber: row.queue_number, whatsappNotified } };
 }

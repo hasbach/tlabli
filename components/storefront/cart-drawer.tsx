@@ -39,6 +39,7 @@ export function CartDrawer({
   const [tableNumber, setTableNumber] = useState("");
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [fallbackWhatsAppLink, setFallbackWhatsAppLink] = useState<string | null>(null);
 
   function handleOpenChange(open: boolean) {
     setIsOpen(open);
@@ -69,6 +70,11 @@ export function CartDrawer({
       restaurantName
     );
 
+    // Computed unconditionally (cheap, no side effects) so it's also
+    // available below as a fallback link if Cloud API was expected to
+    // handle notification but the send fails.
+    const link = buildWhatsAppLink(whatsappNumber, message);
+
     // The wa.me link must open synchronously, before any await, so browsers
     // don't block it as an unsolicited popup — this is why the
     // whatsappCloudApiAvailable check below can't wait for createOrder's
@@ -77,7 +83,6 @@ export function CartDrawer({
     // outright below) it's the only notification this order gets, so it
     // must open even if the database write below fails.
     if (!whatsappCloudApiAvailable) {
-      const link = buildWhatsAppLink(whatsappNumber, message);
       if (typeof window !== "undefined") window.open(link, "_blank", "noopener,noreferrer");
     }
 
@@ -93,7 +98,12 @@ export function CartDrawer({
       currency,
     });
     setSubmitting(false);
-    if ("data" in result) setPlacedOrderId(result.data.id);
+    if ("data" in result) {
+      setPlacedOrderId(result.data.id);
+      if (whatsappCloudApiAvailable && !result.data.whatsappNotified) {
+        setFallbackWhatsAppLink(link);
+      }
+    }
     setStep("done");
   }
 
@@ -238,12 +248,23 @@ export function CartDrawer({
                 Track your order
               </a>
             )}
+            {fallbackWhatsAppLink && (
+              <a
+                href={fallbackWhatsAppLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-primary underline"
+              >
+                Send via WhatsApp
+              </a>
+            )}
             <Button
               variant="outline"
               onClick={() => {
                 clear();
                 setStep("cart");
                 setPlacedOrderId(null);
+                setFallbackWhatsAppLink(null);
                 setIsOpen(false);
               }}
             >
