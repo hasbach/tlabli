@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { mapOrderRow } from "@/lib/supabase/mappers";
+import { sendWhatsAppCloudApiNotification } from "@/lib/whatsapp-cloud-api";
 import type { Order, OrderStatus, OrderLineItem, Currency } from "@/lib/types";
 
 export type ActionResult<T> = { error: string } | { data: T };
@@ -60,5 +61,16 @@ export async function createOrder(
     return { error: error?.message ?? "Failed to place order" };
   }
   const row = data as unknown as { id: string; queue_number: number };
+
+  // Never let a WhatsApp problem affect order creation, which has already
+  // succeeded by this point — sendWhatsAppCloudApiNotification is designed
+  // to never throw, but this repo's rule is "never trust a call site not to
+  // reject," so it's wrapped anyway.
+  try {
+    await sendWhatsAppCloudApiNotification(input.restaurantId, row.id, input);
+  } catch (err) {
+    console.error(`sendWhatsAppCloudApiNotification threw unexpectedly for order ${row.id}:`, err);
+  }
+
   return { data: { id: row.id, queueNumber: row.queue_number } };
 }
