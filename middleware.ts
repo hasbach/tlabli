@@ -21,7 +21,13 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  // A stale/invalid refresh-token cookie (e.g. from a revoked or expired
+  // session) makes getUser() throw instead of returning { user: null } —
+  // treat it the same as "not logged in" rather than crashing the request.
+  const user = await supabase.auth.getUser().then(
+    ({ data }) => data.user,
+    () => null
+  );
 
   const { pathname } = request.nextUrl;
   const isDashboard = pathname.startsWith("/dashboard");

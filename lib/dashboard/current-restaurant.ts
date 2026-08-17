@@ -12,9 +12,14 @@ export interface CurrentRestaurant {
 // request's render shares a single query instead of one each.
 export const getCurrentRestaurant = cache(async (): Promise<CurrentRestaurant | null> => {
   const supabase = createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+
+  // A stale/invalid refresh-token cookie (e.g. from a revoked or expired
+  // session) makes getUser() throw instead of returning { user: null } —
+  // treat it the same as "not logged in" rather than crashing the render.
+  const user = await supabase.auth.getUser().then(
+    ({ data }) => data.user,
+    () => null
+  );
   if (!user) return null;
 
   const { data, error } = await supabase
