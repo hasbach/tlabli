@@ -1,6 +1,7 @@
 "use client";
 
-import { Coffee, MapPin, Phone } from "lucide-react";
+import Link from "next/link";
+import { Coffee, MapPin, Phone, Search } from "lucide-react";
 import type { Restaurant } from "@/lib/types";
 import type { MenuSection } from "@/lib/menu";
 import { LocaleProvider, useLocale } from "@/lib/i18n/LocaleProvider";
@@ -27,7 +28,16 @@ function CafeBody({
     <div className="min-h-screen bg-background text-foreground">
       <section className="relative px-4 pb-8 pt-6">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
-          <LanguageSwitcher />
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/${restaurant.slug}/track`}
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground"
+              aria-label="Track order"
+            >
+              <Search className="h-4 w-4" />
+            </Link>
+            <LanguageSwitcher />
+          </div>
           <CartTrigger />
         </div>
 

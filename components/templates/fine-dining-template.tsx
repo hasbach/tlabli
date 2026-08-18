@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { Search } from "lucide-react";
 import type { Restaurant } from "@/lib/types";
 import type { MenuSection } from "@/lib/menu";
 import { LocaleProvider, useLocale } from "@/lib/i18n/LocaleProvider";
@@ -24,7 +26,16 @@ function FineDiningBody({
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="mx-auto flex max-w-xl items-center justify-between px-6 py-5">
-        <LanguageSwitcher />
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/${restaurant.slug}/track`}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground"
+            aria-label="Track order"
+          >
+            <Search className="h-4 w-4" />
+          </Link>
+          <LanguageSwitcher />
+        </div>
         <CartTrigger />
       </header>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, MapPin, Store, Utensils } from "lucide-react";
+import { ArrowRight, MapPin, Store, Utensils, X } from "lucide-react";
 import type { Order } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -79,6 +79,16 @@ export function OrderQueueBoard({
     }
   }
 
+  async function cancel(id: string) {
+    const order = orders.find((o) => o.id === id);
+    if (!order) return;
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: "cancelled" } : o)));
+    const result = await advanceOrderStatus(id, "cancelled");
+    if ("error" in result) {
+      setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: order.status } : o)));
+    }
+  }
+
   if (active.length === 0) {
     return <p className="text-sm text-muted-foreground">No active orders right now — kitchen&apos;s clear.</p>;
   }
@@ -115,13 +125,25 @@ export function OrderQueueBoard({
 
               <div className="flex items-center justify-between border-t border-border pt-3">
                 <span className="text-sm font-bold">{formatMoney(order.total, order.currency)}</span>
-                {order.status !== "out_for_delivery" || order.orderType !== "delivery" ? (
-                  <Button size="sm" variant="outline" onClick={() => advance(order.id)} className="gap-1">
-                    Advance <ArrowRight className="h-3.5 w-3.5" />
+                <div className="flex items-center gap-1.5">
+                  {(order.status === "out_for_delivery" && order.orderType === "delivery") && (
+                    <span className="text-xs text-muted-foreground">{order.driver?.name}</span>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => cancel(order.id)}
+                    className="gap-1 text-muted-foreground hover:text-destructive"
+                    aria-label="Cancel order"
+                  >
+                    <X className="h-3.5 w-3.5" />
                   </Button>
-                ) : (
-                  <span className="text-xs text-muted-foreground">{order.driver?.name}</span>
-                )}
+                  {(order.status !== "out_for_delivery" || order.orderType !== "delivery") && (
+                    <Button size="sm" variant="outline" onClick={() => advance(order.id)} className="gap-1">
+                      Advance <ArrowRight className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>

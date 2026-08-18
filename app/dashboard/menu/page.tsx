@@ -40,7 +40,7 @@ export default async function MenuBuilderPage() {
         Add categories and dishes, set prices, and mark items sold out or time-limited — changes here are what your
         customers see instantly on your live menu.
       </p>
-      <MenuBuilder categories={categories} initialItems={items} />
+      <MenuBuilder restaurantId={restaurant.id} categories={categories} initialItems={items} />
     </div>
   );
 }
