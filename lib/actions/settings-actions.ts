@@ -8,7 +8,19 @@ import type { Restaurant } from "@/lib/types";
 export type ActionResult<T> = { error: string } | { data: T };
 
 export type RestaurantSettingsPatch = Partial<
-  Pick<Restaurant, "name" | "whatsappNumber" | "tagline" | "address" | "currency" | "lbpExchangeRate" | "showBothCurrencies">
+  Pick<
+    Restaurant,
+    | "name"
+    | "whatsappNumber"
+    | "tagline"
+    | "address"
+    | "currency"
+    | "lbpExchangeRate"
+    | "showBothCurrencies"
+    | "posPrinterEnabled"
+    | "kitchenPrinterEnabled"
+    | "barPrinterEnabled"
+  >
 >;
 
 export async function updateRestaurantSettings(
@@ -24,6 +36,9 @@ export async function updateRestaurantSettings(
   if (patch.currency !== undefined) update.currency = patch.currency;
   if (patch.lbpExchangeRate !== undefined) update.lbp_exchange_rate = patch.lbpExchangeRate;
   if (patch.showBothCurrencies !== undefined) update.show_both_currencies = patch.showBothCurrencies;
+  if (patch.posPrinterEnabled !== undefined) update.pos_printer_enabled = patch.posPrinterEnabled;
+  if (patch.kitchenPrinterEnabled !== undefined) update.kitchen_printer_enabled = patch.kitchenPrinterEnabled;
+  if (patch.barPrinterEnabled !== undefined) update.bar_printer_enabled = patch.barPrinterEnabled;
 
   const { data, error } = await supabase.from("restaurants").update(update).eq("id", restaurantId).select().single();
 

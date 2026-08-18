@@ -37,6 +37,9 @@ export interface Restaurant {
   whatsappNumber: string;
   phone: string;
   address: string;
+  posPrinterEnabled: boolean;
+  kitchenPrinterEnabled: boolean;
+  barPrinterEnabled: boolean;
 }
 
 export interface ItemAddon {

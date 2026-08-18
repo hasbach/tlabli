@@ -40,6 +40,9 @@ export const restaurants: Restaurant[] = [
     whatsappNumber: "+96170123456",
     phone: "+96170123456",
     address: "Hamra Street, Beirut",
+    posPrinterEnabled: true,
+    kitchenPrinterEnabled: true,
+    barPrinterEnabled: false,
   },
   {
     id: "r-bakery",
@@ -67,6 +70,9 @@ export const restaurants: Restaurant[] = [
     whatsappNumber: "+96176234567",
     phone: "+96176234567",
     address: "Jounieh Highway, Mount Lebanon",
+    posPrinterEnabled: true,
+    kitchenPrinterEnabled: true,
+    barPrinterEnabled: false,
   },
   {
     id: "r-finedining",
@@ -94,6 +100,9 @@ export const restaurants: Restaurant[] = [
     whatsappNumber: "+96181345678",
     phone: "+96181345678",
     address: "Downtown, Beirut",
+    posPrinterEnabled: true,
+    kitchenPrinterEnabled: true,
+    barPrinterEnabled: false,
   },
   {
     id: "r-cafe",
@@ -121,6 +130,9 @@ export const restaurants: Restaurant[] = [
     whatsappNumber: "+96178456789",
     phone: "+96178456789",
     address: "Gemmayze, Beirut",
+    posPrinterEnabled: true,
+    kitchenPrinterEnabled: true,
+    barPrinterEnabled: false,
   },
 ];
 

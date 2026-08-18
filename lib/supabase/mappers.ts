@@ -26,6 +26,13 @@ export function mapRestaurantRow(row: Record<string, unknown>): Restaurant {
     whatsappNumber: row.whatsapp_number as string,
     phone: row.phone as string,
     address: row.address as string,
+    // Falls back to the same defaults as the SQL columns themselves
+    // (09_printer_settings.sql) so the print buttons still render sensibly
+    // even before that migration is applied to the live database — only
+    // saving a change through PrinterSettingsForm depends on it existing.
+    posPrinterEnabled: (row.pos_printer_enabled as boolean | null | undefined) ?? true,
+    kitchenPrinterEnabled: (row.kitchen_printer_enabled as boolean | null | undefined) ?? true,
+    barPrinterEnabled: (row.bar_printer_enabled as boolean | null | undefined) ?? false,
   };
 }
 
