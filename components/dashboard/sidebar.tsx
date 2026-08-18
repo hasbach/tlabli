@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, UtensilsCrossed, ClipboardList, BarChart3, Settings, ExternalLink, LogOut } from "lucide-react";
+import { LayoutDashboard, UtensilsCrossed, ClipboardList, BarChart3, Settings, ExternalLink, LogOut, KeyRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase/client";
+import { ChangePasswordControl } from "@/components/shared/change-password-control";
 import type { Restaurant } from "@/lib/types";
 
 const nav = [
@@ -64,6 +65,19 @@ export function Sidebar({ restaurant }: { restaurant: Restaurant }) {
           );
         })}
       </nav>
+
+      <ChangePasswordControl
+        trigger={(onClick) => (
+          <button
+            type="button"
+            onClick={onClick}
+            className="mx-3 flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <KeyRound className="h-4 w-4" />
+            Change password
+          </button>
+        )}
+      />
 
       <button
         type="button"
