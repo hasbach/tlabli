@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { SettingsForm } from "@/components/dashboard/settings-form";
 import { TeamSection } from "@/components/dashboard/team-section";
 import { WhatsAppSettingsForm } from "@/components/dashboard/whatsapp-settings-form";
+import { PrinterSettingsForm } from "@/components/dashboard/printer-settings-form";
 import { getCurrentRestaurant } from "@/lib/dashboard/current-restaurant";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { mapStaffUserRow, mapWhatsAppSettingsRow } from "@/lib/supabase/mappers";
@@ -36,6 +37,9 @@ export default async function SettingsPage() {
       <SettingsForm restaurant={restaurant} />
       <div className="mt-6">
         <WhatsAppSettingsForm restaurant={restaurant} initialSettings={whatsappSettings} sentThisMonth={sentThisMonth ?? 0} />
+      </div>
+      <div className="mt-6">
+        <PrinterSettingsForm restaurant={restaurant} />
       </div>
       <div className="mt-6">
         <TeamSection restaurant={restaurant} initialStaff={staff} />
