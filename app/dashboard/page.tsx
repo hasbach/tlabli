@@ -63,7 +63,15 @@ export default async function DashboardOverviewPage() {
           <h2 className="text-lg font-bold">Kitchen queue</h2>
           <span className="text-xs text-muted-foreground">Tap &quot;Advance&quot; as each order moves along</span>
         </div>
-        <OrderQueueBoard initialOrders={orders} restaurantId={restaurant.id} limit={6} />
+        <OrderQueueBoard
+          initialOrders={orders}
+          restaurantId={restaurant.id}
+          restaurantName={restaurant.name}
+          posPrinterEnabled={restaurant.posPrinterEnabled}
+          kitchenPrinterEnabled={restaurant.kitchenPrinterEnabled}
+          barPrinterEnabled={restaurant.barPrinterEnabled}
+          limit={6}
+        />
       </div>
     </div>
   );

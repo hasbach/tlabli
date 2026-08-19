@@ -189,3 +189,27 @@
   background: var(--border);
   border-radius: 999px;
 }
+
+/* Print orders — #print-ticket (populated by components/dashboard/
+   print-ticket.tsx) is the only thing that should ever reach a physical
+   printer. Hidden by default; only shown, and only it, inside @media print. */
+#print-ticket {
+  display: none;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #print-ticket,
+  #print-ticket * {
+    visibility: visible;
+  }
+  #print-ticket {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 80mm;
+  }
+}

@@ -43,7 +43,14 @@ export default async function OrdersPage() {
       </p>
 
       <div className="mt-6">
-        <OrderQueueBoard initialOrders={orders} restaurantId={restaurant.id} />
+        <OrderQueueBoard
+          initialOrders={orders}
+          restaurantId={restaurant.id}
+          restaurantName={restaurant.name}
+          posPrinterEnabled={restaurant.posPrinterEnabled}
+          kitchenPrinterEnabled={restaurant.kitchenPrinterEnabled}
+          barPrinterEnabled={restaurant.barPrinterEnabled}
+        />
       </div>
 
       {completed.length > 0 && (
