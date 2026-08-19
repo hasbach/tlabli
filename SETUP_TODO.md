@@ -60,6 +60,16 @@ can run against a real database and send real WhatsApp orders.
    publication (or run `ALTER PUBLICATION supabase_realtime ADD TABLE orders;`
    in the SQL Editor). Without this, order status changes and new orders still
    work correctly — the dashboard just needs a manual reload to show them.
+11. Also paste and run `supabase/sql/09_printer_settings.sql` — adds three
+   printer-role toggle columns (POS/Kitchen/Bar) to `restaurants`, defaulting
+   to POS and Kitchen on, Bar off. No other setup is needed for printing:
+   tickets print through the browser's own print dialog on whichever device
+   is running the dashboard, using whatever printer that device already has
+   configured — there's no printer IP, driver, or cloud print service
+   involved. Until this migration runs, the Printers card in
+   `/dashboard/settings` will show a save error if you try to change a
+   toggle, but the POS/Kitchen print buttons on the order queue already work
+   correctly using the same true/true/false defaults this migration sets.
 
 ## 2. WhatsApp order notifications
 
