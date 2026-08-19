@@ -197,15 +197,17 @@
   display: none;
 }
 
+/* Scoped to body.printing-ticket (toggled by print-ticket.tsx around
+   window.print()) so hitting Ctrl+P on any OTHER page — the public
+   storefront menu, order tracking, marketing, /admin — never produces a
+   blank print. display:none (not visibility:hidden) on the hidden
+   siblings so the printed document collapses to just the ticket instead
+   of leaving blank trailing pages the height of the full dashboard. */
 @media print {
-  body * {
-    visibility: hidden;
+  body.printing-ticket > *:not(#print-ticket) {
+    display: none !important;
   }
-  #print-ticket,
-  #print-ticket * {
-    visibility: visible;
-  }
-  #print-ticket {
+  body.printing-ticket #print-ticket {
     display: block;
     position: absolute;
     top: 0;

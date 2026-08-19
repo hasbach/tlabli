@@ -28,10 +28,12 @@ function fulfillmentLine(order: Order): string {
 export function PrintTicket({ job, onDone }: { job: PrintJob | null; onDone: () => void }) {
   useEffect(() => {
     if (!job) return;
+    document.body.classList.add("printing-ticket");
     window.addEventListener("afterprint", onDone);
     window.print();
     const fallback = setTimeout(onDone, 5000);
     return () => {
+      document.body.classList.remove("printing-ticket");
       window.removeEventListener("afterprint", onDone);
       clearTimeout(fallback);
     };
@@ -42,6 +44,8 @@ export function PrintTicket({ job, onDone }: { job: PrintJob | null; onDone: () 
   const { order, role, restaurantName } = job;
   const heading = ROLE_HEADING[role];
   const showPrices = role === "pos";
+  const itemsSubtotal = order.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  const addonsTotal = order.total - itemsSubtotal;
 
   return createPortal(
     <div id="print-ticket" className="font-mono text-xs leading-relaxed text-black">
@@ -65,6 +69,12 @@ export function PrintTicket({ job, onDone }: { job: PrintJob | null; onDone: () 
       <hr className="my-1 border-black" />
       {showPrices && (
         <>
+          {addonsTotal > 0.005 && (
+            <div className="flex justify-between">
+              <span>Add-ons</span>
+              <span>{formatMoney(addonsTotal, order.currency)}</span>
+            </div>
+          )}
           <div className="flex justify-between font-bold">
             <span>TOTAL</span>
             <span>{formatMoney(order.total, order.currency)}</span>
