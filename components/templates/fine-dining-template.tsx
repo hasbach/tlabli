@@ -6,6 +6,7 @@ import type { Restaurant } from "@/lib/types";
 import type { MenuSection } from "@/lib/menu";
 import { LocaleProvider, useLocale } from "@/lib/i18n/LocaleProvider";
 import { localizedCategoryName } from "@/lib/i18n/localized-menu-content";
+import { resolveBrandColors, brandColorsToCssVars } from "@/lib/branding";
 import { CartProvider } from "@/components/storefront/cart-provider";
 import { CartDrawer } from "@/components/storefront/cart-drawer";
 import { CartTrigger } from "@/components/storefront/cart-trigger";
@@ -40,13 +41,29 @@ function FineDiningBody({
         <CartTrigger />
       </header>
 
-      <section className="mx-auto max-w-xl px-6 pb-10 text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-secondary">Est. in Beirut</p>
-        <h1 className="mt-3 font-display text-5xl tracking-wide">{restaurant.name}</h1>
-        <div className="mx-auto mt-4 h-px w-16 bg-secondary" />
-        <p className="mx-auto mt-4 max-w-xs text-sm text-muted-foreground">{restaurant.tagline}</p>
-        <div className="mt-4 flex justify-center">
-          <OpenBadge hours={restaurant.hours} openLabel={t("openNow")} closedLabel={t("closedNow")} />
+      <section
+        className="relative px-6 pb-10 text-center"
+        style={
+          restaurant.headerImageUrl
+            ? { backgroundImage: `url(${restaurant.headerImageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+            : undefined
+        }
+      >
+        {restaurant.headerImageUrl && <div className="absolute inset-0 bg-black/50" />}
+        <div className={`relative mx-auto max-w-xl ${restaurant.headerImageUrl ? "py-8" : ""}`}>
+          <p className={`text-xs font-semibold uppercase tracking-[0.3em] ${restaurant.headerImageUrl ? "text-white/90" : "text-secondary"}`}>
+            Est. in Beirut
+          </p>
+          <h1 className={`mt-3 font-display text-5xl tracking-wide ${restaurant.headerImageUrl ? "text-white" : ""}`}>
+            {restaurant.name}
+          </h1>
+          <div className={`mx-auto mt-4 h-px w-16 ${restaurant.headerImageUrl ? "bg-white/70" : "bg-secondary"}`} />
+          <p className={`mx-auto mt-4 max-w-xs text-sm ${restaurant.headerImageUrl ? "text-white/90" : "text-muted-foreground"}`}>
+            {restaurant.tagline}
+          </p>
+          <div className="mt-4 flex justify-center">
+            <OpenBadge hours={restaurant.hours} openLabel={t("openNow")} closedLabel={t("closedNow")} />
+          </div>
         </div>
       </section>
 
@@ -89,8 +106,9 @@ export function FineDiningTemplate({
   sections: MenuSection[];
   whatsappCloudApiAvailable: boolean;
 }) {
+  const brandColors = resolveBrandColors(restaurant);
   return (
-    <div className="theme-fine-dining">
+    <div className="theme-fine-dining" style={brandColors ? brandColorsToCssVars(brandColors) : undefined}>
       <LocaleProvider availableLocales={restaurant.languages} defaultLocale={restaurant.languages[0]}>
         <CartProvider currency={restaurant.currency}>
           <FineDiningBody restaurant={restaurant} sections={sections} whatsappCloudApiAvailable={whatsappCloudApiAvailable} />

@@ -33,6 +33,14 @@ export function mapRestaurantRow(row: Record<string, unknown>): Restaurant {
     posPrinterEnabled: (row.pos_printer_enabled as boolean | null | undefined) ?? true,
     kitchenPrinterEnabled: (row.kitchen_printer_enabled as boolean | null | undefined) ?? true,
     barPrinterEnabled: (row.bar_printer_enabled as boolean | null | undefined) ?? false,
+    // Falls back to the same default as the SQL column (11_branding.sql) —
+    // 'template-default' means "no override, keep this template's own
+    // hardcoded .theme-* colors" — so branding still renders correctly
+    // even before that migration is applied to the live database.
+    brandPalette: (row.brand_palette as string | null | undefined) ?? "template-default",
+    brandPrimaryColor: (row.brand_primary_color as string) ?? undefined,
+    brandSecondaryColor: (row.brand_secondary_color as string) ?? undefined,
+    headerImageUrl: (row.header_image_url as string) ?? undefined,
   };
 }
 

@@ -81,6 +81,16 @@ can run against a real database and send real WhatsApp orders.
    owner-entered menu content (dish names, descriptions, category names,
    add-ons), which previously always showed in whatever language the owner
    originally typed it in, regardless of the selected language.
+13. Also paste and run `supabase/sql/11_branding.sql` — adds a color-palette
+   choice and an optional header image to `restaurants`. From
+   `/dashboard/settings`, owners can pick one of 8 curated color presets, go
+   fully custom with two colors of their own (safe text contrast is computed
+   automatically), or keep their template's own default colors — and upload
+   a header image that becomes the background behind their name, tagline,
+   address, and phone number on their live menu. Until this migration runs,
+   the Branding card will show a save error on any change, but every
+   storefront keeps rendering with its template's normal default colors in
+   the meantime (nothing breaks, it just can't be customized yet).
 
 ## 2. WhatsApp order notifications
 

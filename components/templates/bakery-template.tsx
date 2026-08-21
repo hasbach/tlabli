@@ -6,6 +6,7 @@ import type { Restaurant } from "@/lib/types";
 import type { MenuSection } from "@/lib/menu";
 import { LocaleProvider, useLocale } from "@/lib/i18n/LocaleProvider";
 import { localizedCategoryName } from "@/lib/i18n/localized-menu-content";
+import { resolveBrandColors, brandColorsToCssVars } from "@/lib/branding";
 import { CartProvider } from "@/components/storefront/cart-provider";
 import { CartDrawer } from "@/components/storefront/cart-drawer";
 import { CartTrigger } from "@/components/storefront/cart-trigger";
@@ -40,22 +41,36 @@ function BakeryBody({
         <CartTrigger />
       </header>
 
-      <section className="mx-auto max-w-2xl px-4 pb-8 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[1.75rem] bg-primary text-2xl font-bold text-primary-foreground shadow-soft">
-          {restaurant.logoInitial}
-        </div>
-        <h1 className="font-bakery text-4xl font-medium tracking-tight sm:text-5xl">{restaurant.name}</h1>
-        <p className="mx-auto mt-2 max-w-sm text-muted-foreground">{restaurant.tagline}</p>
-        <div className="mt-4 flex items-center justify-center">
-          <OpenBadge hours={restaurant.hours} openLabel={t("openNow")} closedLabel={t("closedNow")} />
-        </div>
-        <div className="mt-3 flex items-center justify-center gap-4 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <MapPin className="h-3.5 w-3.5" /> {restaurant.address}
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <Phone className="h-3.5 w-3.5" /> {restaurant.phone}
-          </span>
+      <section
+        className="relative mx-auto max-w-2xl px-4 pb-8 text-center"
+        style={
+          restaurant.headerImageUrl
+            ? { backgroundImage: `url(${restaurant.headerImageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+            : undefined
+        }
+      >
+        {restaurant.headerImageUrl && <div className="absolute inset-0 bg-black/45" />}
+        <div className={restaurant.headerImageUrl ? "relative py-6" : undefined}>
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[1.75rem] bg-primary text-2xl font-bold text-primary-foreground shadow-soft">
+            {restaurant.logoInitial}
+          </div>
+          <h1 className={`font-bakery text-4xl font-medium tracking-tight sm:text-5xl ${restaurant.headerImageUrl ? "text-white" : ""}`}>
+            {restaurant.name}
+          </h1>
+          <p className={`mx-auto mt-2 max-w-sm ${restaurant.headerImageUrl ? "text-white/90" : "text-muted-foreground"}`}>
+            {restaurant.tagline}
+          </p>
+          <div className="mt-4 flex items-center justify-center">
+            <OpenBadge hours={restaurant.hours} openLabel={t("openNow")} closedLabel={t("closedNow")} />
+          </div>
+          <div className={`mt-3 flex items-center justify-center gap-4 text-xs ${restaurant.headerImageUrl ? "text-white/90" : "text-muted-foreground"}`}>
+            <span className="inline-flex items-center gap-1">
+              <MapPin className="h-3.5 w-3.5" /> {restaurant.address}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Phone className="h-3.5 w-3.5" /> {restaurant.phone}
+            </span>
+          </div>
         </div>
       </section>
 
@@ -120,8 +135,9 @@ export function BakeryTemplate({
   sections: MenuSection[];
   whatsappCloudApiAvailable: boolean;
 }) {
+  const brandColors = resolveBrandColors(restaurant);
   return (
-    <div className="theme-bakery">
+    <div className="theme-bakery" style={brandColors ? brandColorsToCssVars(brandColors) : undefined}>
       <LocaleProvider availableLocales={restaurant.languages} defaultLocale={restaurant.languages[0]}>
         <CartProvider currency={restaurant.currency}>
           <BakeryBody restaurant={restaurant} sections={sections} whatsappCloudApiAvailable={whatsappCloudApiAvailable} />

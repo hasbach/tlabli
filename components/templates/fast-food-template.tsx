@@ -6,6 +6,7 @@ import type { Restaurant } from "@/lib/types";
 import type { MenuSection } from "@/lib/menu";
 import { LocaleProvider, useLocale } from "@/lib/i18n/LocaleProvider";
 import { localizedCategoryName } from "@/lib/i18n/localized-menu-content";
+import { resolveBrandColors, brandColorsToCssVars } from "@/lib/branding";
 import { CartProvider } from "@/components/storefront/cart-provider";
 import { CartDrawer } from "@/components/storefront/cart-drawer";
 import { CartTrigger } from "@/components/storefront/cart-trigger";
@@ -54,19 +55,26 @@ function FastFoodBody({
 
       <section
         className="relative overflow-hidden px-4 py-10 text-center"
-        style={{ background: "linear-gradient(135deg, var(--primary), var(--secondary))" }}
+        style={
+          restaurant.headerImageUrl
+            ? { backgroundImage: `url(${restaurant.headerImageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+            : { background: "linear-gradient(135deg, var(--primary), var(--secondary))" }
+        }
       >
-        <Flame className="mx-auto mb-3 h-9 w-9 text-white/90" strokeWidth={1.5} />
-        <h1 className="mx-auto max-w-md text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl">
-          {restaurant.tagline}
-        </h1>
-        <div className="mt-4 flex items-center justify-center gap-4 text-sm font-medium text-white/90">
-          <span className="inline-flex items-center gap-1">
-            <MapPin className="h-4 w-4" /> {restaurant.address}
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <Phone className="h-4 w-4" /> {restaurant.phone}
-          </span>
+        {restaurant.headerImageUrl && <div className="absolute inset-0 bg-black/45" />}
+        <div className="relative">
+          <Flame className="mx-auto mb-3 h-9 w-9 text-white/90" strokeWidth={1.5} />
+          <h1 className="mx-auto max-w-md text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl">
+            {restaurant.tagline}
+          </h1>
+          <div className="mt-4 flex items-center justify-center gap-4 text-sm font-medium text-white/90">
+            <span className="inline-flex items-center gap-1">
+              <MapPin className="h-4 w-4" /> {restaurant.address}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Phone className="h-4 w-4" /> {restaurant.phone}
+            </span>
+          </div>
         </div>
       </section>
 
@@ -121,8 +129,9 @@ export function FastFoodTemplate({
   sections: MenuSection[];
   whatsappCloudApiAvailable: boolean;
 }) {
+  const brandColors = resolveBrandColors(restaurant);
   return (
-    <div className="theme-fast-food">
+    <div className="theme-fast-food" style={brandColors ? brandColorsToCssVars(brandColors) : undefined}>
       <LocaleProvider availableLocales={restaurant.languages} defaultLocale={restaurant.languages[0]}>
         <CartProvider currency={restaurant.currency}>
           <FastFoodBody restaurant={restaurant} sections={sections} whatsappCloudApiAvailable={whatsappCloudApiAvailable} />

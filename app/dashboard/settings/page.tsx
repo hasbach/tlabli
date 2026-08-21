@@ -3,6 +3,7 @@ import { SettingsForm } from "@/components/dashboard/settings-form";
 import { TeamSection } from "@/components/dashboard/team-section";
 import { WhatsAppSettingsForm } from "@/components/dashboard/whatsapp-settings-form";
 import { PrinterSettingsForm } from "@/components/dashboard/printer-settings-form";
+import { BrandingSettingsForm } from "@/components/dashboard/branding-settings-form";
 import { getCurrentRestaurant } from "@/lib/dashboard/current-restaurant";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { mapStaffUserRow, mapWhatsAppSettingsRow } from "@/lib/supabase/mappers";
@@ -35,6 +36,9 @@ export default async function SettingsPage() {
       <h1 className="text-2xl font-extrabold tracking-tight">Settings</h1>
       <p className="mb-6 text-sm text-muted-foreground">Business profile, currency display, and your plan.</p>
       <SettingsForm restaurant={restaurant} />
+      <div className="mt-6">
+        <BrandingSettingsForm restaurant={restaurant} />
+      </div>
       <div className="mt-6">
         <WhatsAppSettingsForm restaurant={restaurant} initialSettings={whatsappSettings} sentThisMonth={sentThisMonth ?? 0} />
       </div>

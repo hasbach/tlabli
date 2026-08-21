@@ -40,6 +40,11 @@ export interface Restaurant {
   posPrinterEnabled: boolean;
   kitchenPrinterEnabled: boolean;
   barPrinterEnabled: boolean;
+  /** 'template-default' (this template's hardcoded colors), a preset id from lib/branding.ts, or 'custom'. */
+  brandPalette: string;
+  brandPrimaryColor?: string;
+  brandSecondaryColor?: string;
+  headerImageUrl?: string | null;
 }
 
 export interface ItemAddon {

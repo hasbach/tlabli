@@ -43,6 +43,7 @@ export const restaurants: Restaurant[] = [
     posPrinterEnabled: true,
     kitchenPrinterEnabled: true,
     barPrinterEnabled: false,
+    brandPalette: "template-default",
   },
   {
     id: "r-bakery",
@@ -73,6 +74,7 @@ export const restaurants: Restaurant[] = [
     posPrinterEnabled: true,
     kitchenPrinterEnabled: true,
     barPrinterEnabled: false,
+    brandPalette: "template-default",
   },
   {
     id: "r-finedining",
@@ -103,6 +105,7 @@ export const restaurants: Restaurant[] = [
     posPrinterEnabled: true,
     kitchenPrinterEnabled: true,
     barPrinterEnabled: false,
+    brandPalette: "template-default",
   },
   {
     id: "r-cafe",
@@ -133,6 +136,7 @@ export const restaurants: Restaurant[] = [
     posPrinterEnabled: true,
     kitchenPrinterEnabled: true,
     barPrinterEnabled: false,
+    brandPalette: "template-default",
   },
 ];
 

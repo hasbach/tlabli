@@ -129,6 +129,17 @@ export function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
                 {form.status}
               </Badge>
             </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              To upgrade your plan, contact us at{" "}
+              <a href="tel:+96179170372" className="underline">
+                +961 79 170 372
+              </a>{" "}
+              or{" "}
+              <a href="mailto:support@salloumservices.com" className="underline">
+                support@salloumservices.com
+              </a>
+              .
+            </p>
           </CardContent>
         </Card>
 
