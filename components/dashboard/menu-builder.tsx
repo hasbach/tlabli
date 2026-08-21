@@ -301,7 +301,7 @@ export function MenuBuilder({
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       <Sheet open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
-        <SheetContent>
+        <SheetContent className="overflow-y-auto scrollbar-thin">
           <SheetHeader>
             <SheetTitle>{editing?.id ? "Edit item" : "Add item"}</SheetTitle>
           </SheetHeader>
