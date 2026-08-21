@@ -20,7 +20,18 @@ export interface NewMenuItemInput {
 export type MenuItemPatch = Partial<
   Pick<
     MenuItem,
-    "title" | "description" | "price" | "isAvailable" | "availableFrom" | "availableUntil" | "categoryId" | "imageUrl"
+    | "title"
+    | "description"
+    | "price"
+    | "isAvailable"
+    | "availableFrom"
+    | "availableUntil"
+    | "categoryId"
+    | "imageUrl"
+    | "titleAr"
+    | "descriptionAr"
+    | "titleFr"
+    | "descriptionFr"
   >
 >;
 
@@ -56,6 +67,10 @@ export async function updateMenuItem(id: string, patch: MenuItemPatch): Promise<
   if (patch.availableUntil !== undefined) update.available_until = patch.availableUntil || null;
   if (patch.categoryId !== undefined) update.category_id = patch.categoryId;
   if (patch.imageUrl !== undefined) update.image_url = patch.imageUrl;
+  if (patch.titleAr !== undefined) update.title_ar = patch.titleAr || null;
+  if (patch.descriptionAr !== undefined) update.description_ar = patch.descriptionAr || null;
+  if (patch.titleFr !== undefined) update.title_fr = patch.titleFr || null;
+  if (patch.descriptionFr !== undefined) update.description_fr = patch.descriptionFr || null;
 
   const { data, error } = await supabase.from("menu_items").update(update).eq("id", id).select().single();
 
@@ -75,6 +90,8 @@ export async function deleteMenuItem(id: string): Promise<ActionResult<true>> {
 export interface NewMenuCategoryInput {
   restaurantId: string;
   name: string;
+  nameAr?: string;
+  nameFr?: string;
 }
 
 export async function createMenuCategory(input: NewMenuCategoryInput): Promise<ActionResult<MenuCategory>> {
@@ -90,7 +107,13 @@ export async function createMenuCategory(input: NewMenuCategoryInput): Promise<A
 
   const { data, error } = await supabase
     .from("menu_categories")
-    .insert({ restaurant_id: input.restaurantId, name: input.name, sort_order: nextSortOrder })
+    .insert({
+      restaurant_id: input.restaurantId,
+      name: input.name,
+      sort_order: nextSortOrder,
+      name_ar: input.nameAr || null,
+      name_fr: input.nameFr || null,
+    })
     .select()
     .single();
 
@@ -103,13 +126,21 @@ export interface NewItemAddonInput {
   itemId: string;
   name: string;
   extraPrice: number;
+  nameAr?: string;
+  nameFr?: string;
 }
 
 export async function createItemAddon(input: NewItemAddonInput): Promise<ActionResult<ItemAddon>> {
   const supabase = createServerSupabaseClient();
   const { data, error } = await supabase
     .from("item_addons")
-    .insert({ item_id: input.itemId, name: input.name, extra_price: input.extraPrice })
+    .insert({
+      item_id: input.itemId,
+      name: input.name,
+      extra_price: input.extraPrice,
+      name_ar: input.nameAr || null,
+      name_fr: input.nameFr || null,
+    })
     .select()
     .single();
 

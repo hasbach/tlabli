@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCart } from "./cart-provider";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { localizedItemTitle, localizedItemDescription, localizedAddonName } from "@/lib/i18n/localized-menu-content";
 
 export function MenuItemCard({
   item,
@@ -22,7 +23,7 @@ export function MenuItemCard({
   lbpExchangeRate: number;
 }) {
   const { addLine } = useCart();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
   const [variant, setVariant] = useState<string | undefined>(item.variants?.[0]);
   const [qty, setQty] = useState(1);
@@ -74,11 +75,11 @@ export function MenuItemCard({
 
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <div className="flex flex-wrap items-start justify-between gap-2">
-          <h3 className="min-w-0 font-semibold leading-snug">{item.title}</h3>
+          <h3 className="min-w-0 font-semibold leading-snug">{localizedItemTitle(item, locale)}</h3>
           <span className="whitespace-nowrap font-semibold text-primary">{priceLabel}</span>
         </div>
 
-        <p className="text-sm text-muted-foreground line-clamp-2">{item.description}</p>
+        <p className="text-sm text-muted-foreground line-clamp-2">{localizedItemDescription(item, locale)}</p>
 
         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
           {item.isPopular && !soldOut && <Badge variant="default">{t("popular")}</Badge>}
@@ -120,7 +121,7 @@ export function MenuItemCard({
                     : "border-border text-muted-foreground hover:bg-muted"
                 }`}
               >
-                + {a.name} (${a.extraPrice.toFixed(2)})
+                + {localizedAddonName(a, locale)} (${a.extraPrice.toFixed(2)})
               </button>
             ))}
           </div>

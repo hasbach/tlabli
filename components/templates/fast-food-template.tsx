@@ -5,6 +5,7 @@ import { Flame, MapPin, Phone, Search } from "lucide-react";
 import type { Restaurant } from "@/lib/types";
 import type { MenuSection } from "@/lib/menu";
 import { LocaleProvider, useLocale } from "@/lib/i18n/LocaleProvider";
+import { localizedCategoryName } from "@/lib/i18n/localized-menu-content";
 import { CartProvider } from "@/components/storefront/cart-provider";
 import { CartDrawer } from "@/components/storefront/cart-drawer";
 import { CartTrigger } from "@/components/storefront/cart-trigger";
@@ -22,7 +23,7 @@ function FastFoodBody({
   sections: MenuSection[];
   whatsappCloudApiAvailable: boolean;
 }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -74,7 +75,7 @@ function FastFoodBody({
           <TabsList className="w-full justify-start">
             {sections.map((s) => (
               <TabsTrigger key={s.category.id} value={s.category.id}>
-                {s.category.name}
+                {localizedCategoryName(s.category, locale)}
               </TabsTrigger>
             ))}
           </TabsList>

@@ -5,6 +5,7 @@ import { Coffee, MapPin, Phone, Search } from "lucide-react";
 import type { Restaurant } from "@/lib/types";
 import type { MenuSection } from "@/lib/menu";
 import { LocaleProvider, useLocale } from "@/lib/i18n/LocaleProvider";
+import { localizedCategoryName } from "@/lib/i18n/localized-menu-content";
 import { CartProvider } from "@/components/storefront/cart-provider";
 import { CartDrawer } from "@/components/storefront/cart-drawer";
 import { CartTrigger } from "@/components/storefront/cart-trigger";
@@ -22,7 +23,7 @@ function CafeBody({
   sections: MenuSection[];
   whatsappCloudApiAvailable: boolean;
 }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -67,7 +68,7 @@ function CafeBody({
           <TabsList className="mx-auto w-full max-w-md justify-center">
             {sections.map((s) => (
               <TabsTrigger key={s.category.id} value={s.category.id}>
-                {s.category.name}
+                {localizedCategoryName(s.category, locale)}
               </TabsTrigger>
             ))}
           </TabsList>

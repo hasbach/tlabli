@@ -41,10 +41,14 @@ export function MenuBuilder({
   const [editing, setEditing] = useState<Draft | null>(null);
 
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryNameAr, setNewCategoryNameAr] = useState("");
+  const [newCategoryNameFr, setNewCategoryNameFr] = useState("");
   const [addingCategory, setAddingCategory] = useState(false);
 
   const [newAddonName, setNewAddonName] = useState("");
   const [newAddonPrice, setNewAddonPrice] = useState("");
+  const [newAddonNameAr, setNewAddonNameAr] = useState("");
+  const [newAddonNameFr, setNewAddonNameFr] = useState("");
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +57,12 @@ export function MenuBuilder({
     if (!newCategoryName.trim()) return;
     setError(null);
     setAddingCategory(true);
-    const result = await createMenuCategory({ restaurantId, name: newCategoryName.trim() });
+    const result = await createMenuCategory({
+      restaurantId,
+      name: newCategoryName.trim(),
+      nameAr: newCategoryNameAr.trim() || undefined,
+      nameFr: newCategoryNameFr.trim() || undefined,
+    });
     setAddingCategory(false);
     if ("error" in result) {
       setError(result.error);
@@ -61,6 +70,8 @@ export function MenuBuilder({
     }
     setCategoryList((prev) => [...prev, result.data]);
     setNewCategoryName("");
+    setNewCategoryNameAr("");
+    setNewCategoryNameFr("");
   }
 
   async function toggleAvailable(id: string) {
@@ -75,6 +86,8 @@ export function MenuBuilder({
   }
 
   async function removeItem(id: string) {
+    const item = items.find((i) => i.id === id);
+    if (!item || !window.confirm(`Delete "${item.title}"? This can't be undone.`)) return;
     const previous = items;
     setItems((prev) => prev.filter((i) => i.id !== id));
     const result = await deleteMenuItem(id);
@@ -105,6 +118,10 @@ export function MenuBuilder({
         availableFrom: editing.availableFrom,
         availableUntil: editing.availableUntil,
         categoryId: editing.categoryId,
+        titleAr: editing.titleAr,
+        descriptionAr: editing.descriptionAr,
+        titleFr: editing.titleFr,
+        descriptionFr: editing.descriptionFr,
       });
       if ("error" in result) {
         setError(result.error);
@@ -191,6 +208,8 @@ export function MenuBuilder({
       itemId: editing.id,
       name: newAddonName.trim(),
       extraPrice: Number(newAddonPrice) || 0,
+      nameAr: newAddonNameAr.trim() || undefined,
+      nameFr: newAddonNameFr.trim() || undefined,
     });
     if ("error" in result) {
       setError(result.error);
@@ -201,6 +220,8 @@ export function MenuBuilder({
     setItems((prev) => prev.map((i) => (i.id === editing.id ? { ...i, addons: updatedAddons } : i)));
     setNewAddonName("");
     setNewAddonPrice("");
+    setNewAddonNameAr("");
+    setNewAddonNameFr("");
   }
 
   async function removeAddon(addonId: string) {
@@ -218,11 +239,24 @@ export function MenuBuilder({
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-end gap-2">
         <Input
           value={newCategoryName}
           onChange={(e) => setNewCategoryName(e.target.value)}
           placeholder="New category name (e.g. Desserts)"
+          className="max-w-xs"
+        />
+        <Input
+          value={newCategoryNameAr}
+          onChange={(e) => setNewCategoryNameAr(e.target.value)}
+          placeholder="Arabic name (optional)"
+          dir="rtl"
+          className="max-w-xs"
+        />
+        <Input
+          value={newCategoryNameFr}
+          onChange={(e) => setNewCategoryNameFr(e.target.value)}
+          placeholder="French name (optional)"
           className="max-w-xs"
         />
         <Button
@@ -349,6 +383,62 @@ export function MenuBuilder({
               </p>
 
               <div>
+                <Label>Translations</Label>
+                {editing.id ? (
+                  <div className="flex flex-col gap-3">
+                    <div>
+                      <Label htmlFor="item-title-ar" className="text-xs text-muted-foreground">
+                        Title (Arabic)
+                      </Label>
+                      <Input
+                        id="item-title-ar"
+                        dir="rtl"
+                        value={editing.titleAr ?? ""}
+                        onChange={(e) => setEditing({ ...editing, titleAr: e.target.value })}
+                        placeholder="سماش برغر"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="item-desc-ar" className="text-xs text-muted-foreground">
+                        Description (Arabic)
+                      </Label>
+                      <Textarea
+                        id="item-desc-ar"
+                        dir="rtl"
+                        value={editing.descriptionAr ?? ""}
+                        onChange={(e) => setEditing({ ...editing, descriptionAr: e.target.value })}
+                        placeholder="قطعة لحم، جبنة شيدر، مخلل..."
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="item-title-fr" className="text-xs text-muted-foreground">
+                        Title (French)
+                      </Label>
+                      <Input
+                        id="item-title-fr"
+                        value={editing.titleFr ?? ""}
+                        onChange={(e) => setEditing({ ...editing, titleFr: e.target.value })}
+                        placeholder="Smash Burger"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="item-desc-fr" className="text-xs text-muted-foreground">
+                        Description (French)
+                      </Label>
+                      <Textarea
+                        id="item-desc-fr"
+                        value={editing.descriptionFr ?? ""}
+                        onChange={(e) => setEditing({ ...editing, descriptionFr: e.target.value })}
+                        placeholder="Steak, cheddar, cornichons..."
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-xs text-muted-foreground">Save the item first, then you can add Arabic/French translations here.</p>
+                )}
+              </div>
+
+              <div>
                 <Label>Photo</Label>
                 {editing.id ? (
                   <div className="flex items-center gap-3">
@@ -398,7 +488,11 @@ export function MenuBuilder({
                       {(editing.addons ?? []).map((addon) => (
                         <div key={addon.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
                           <span>
-                            {addon.name} (+{formatMoney(addon.extraPrice, "USD")})
+                            {addon.name}
+                            {(addon.nameAr || addon.nameFr) && (
+                              <span className="text-muted-foreground"> ({[addon.nameAr, addon.nameFr].filter(Boolean).join(" / ")})</span>
+                            )}{" "}
+                            (+{formatMoney(addon.extraPrice, "USD")})
                           </span>
                           <button
                             type="button"
@@ -414,22 +508,39 @@ export function MenuBuilder({
                         <p className="text-xs text-muted-foreground">No add-ons yet.</p>
                       )}
                     </div>
-                    <div className="mt-3 flex items-center gap-2">
-                      <Input
-                        value={newAddonName}
-                        onChange={(e) => setNewAddonName(e.target.value)}
-                        placeholder="e.g. Extra cheese"
-                        className="flex-1"
-                      />
-                      <Input
-                        type="number"
-                        step="0.25"
-                        value={newAddonPrice}
-                        onChange={(e) => setNewAddonPrice(e.target.value)}
-                        placeholder="0.75"
-                        className="w-24"
-                      />
-                      <Button size="sm" variant="outline" onClick={addAddon} disabled={!newAddonName.trim()}>
+                    <div className="mt-3 flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={newAddonName}
+                          onChange={(e) => setNewAddonName(e.target.value)}
+                          placeholder="e.g. Extra cheese"
+                          className="flex-1"
+                        />
+                        <Input
+                          type="number"
+                          step="0.25"
+                          value={newAddonPrice}
+                          onChange={(e) => setNewAddonPrice(e.target.value)}
+                          placeholder="0.75"
+                          className="w-24"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={newAddonNameAr}
+                          onChange={(e) => setNewAddonNameAr(e.target.value)}
+                          placeholder="Arabic name (optional)"
+                          dir="rtl"
+                          className="flex-1"
+                        />
+                        <Input
+                          value={newAddonNameFr}
+                          onChange={(e) => setNewAddonNameFr(e.target.value)}
+                          placeholder="French name (optional)"
+                          className="flex-1"
+                        />
+                      </div>
+                      <Button size="sm" variant="outline" onClick={addAddon} disabled={!newAddonName.trim()} className="self-start">
                         Add
                       </Button>
                     </div>

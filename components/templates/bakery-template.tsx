@@ -5,6 +5,7 @@ import { Croissant, MapPin, Phone, Search } from "lucide-react";
 import type { Restaurant } from "@/lib/types";
 import type { MenuSection } from "@/lib/menu";
 import { LocaleProvider, useLocale } from "@/lib/i18n/LocaleProvider";
+import { localizedCategoryName } from "@/lib/i18n/localized-menu-content";
 import { CartProvider } from "@/components/storefront/cart-provider";
 import { CartDrawer } from "@/components/storefront/cart-drawer";
 import { CartTrigger } from "@/components/storefront/cart-trigger";
@@ -21,7 +22,7 @@ function BakeryBody({
   sections: MenuSection[];
   whatsappCloudApiAvailable: boolean;
 }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -67,7 +68,7 @@ function BakeryBody({
               href={`#${s.category.id}`}
               className="whitespace-nowrap text-sm font-semibold text-muted-foreground transition-colors hover:text-primary"
             >
-              {s.category.name}
+              {localizedCategoryName(s.category, locale)}
             </a>
           ))}
         </div>
@@ -78,7 +79,7 @@ function BakeryBody({
           <section key={s.category.id} id={s.category.id} className={idx > 0 ? "mt-10" : ""}>
             <div className="mb-4 flex items-center gap-2">
               <Croissant className="h-5 w-5 text-primary" />
-              <h2 className="font-bakery text-2xl font-medium">{s.category.name}</h2>
+              <h2 className="font-bakery text-2xl font-medium">{localizedCategoryName(s.category, locale)}</h2>
             </div>
             <div className="grid gap-3">
               {s.items.map((item) => (

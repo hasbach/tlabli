@@ -42,11 +42,19 @@ export function mapMenuCategoryRow(row: Record<string, unknown>): MenuCategory {
     restaurantId: row.restaurant_id as string,
     name: row.name as string,
     sortOrder: row.sort_order as number,
+    nameAr: (row.name_ar as string) ?? undefined,
+    nameFr: (row.name_fr as string) ?? undefined,
   };
 }
 
 export function mapItemAddonRow(row: Record<string, unknown>): ItemAddon {
-  return { id: row.id as string, name: row.name as string, extraPrice: Number(row.extra_price) };
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    extraPrice: Number(row.extra_price),
+    nameAr: (row.name_ar as string) ?? undefined,
+    nameFr: (row.name_fr as string) ?? undefined,
+  };
 }
 
 export function mapMenuItemRow(row: Record<string, unknown>, addons: ItemAddon[]): MenuItem {
@@ -63,6 +71,10 @@ export function mapMenuItemRow(row: Record<string, unknown>, addons: ItemAddon[]
     addons,
     variants: (row.variants as string[]) ?? undefined,
     isPopular: row.is_popular as boolean,
+    titleAr: (row.title_ar as string) ?? undefined,
+    descriptionAr: (row.description_ar as string) ?? undefined,
+    titleFr: (row.title_fr as string) ?? undefined,
+    descriptionFr: (row.description_fr as string) ?? undefined,
   };
 }
 

@@ -46,6 +46,8 @@ export interface ItemAddon {
   id: string;
   name: string;
   extraPrice: number;
+  nameAr?: string;
+  nameFr?: string;
 }
 
 export interface MenuItem {
@@ -62,6 +64,10 @@ export interface MenuItem {
   addons: ItemAddon[];
   variants?: string[];
   isPopular?: boolean;
+  titleAr?: string;
+  descriptionAr?: string;
+  titleFr?: string;
+  descriptionFr?: string;
 }
 
 export interface MenuCategory {
@@ -69,6 +75,8 @@ export interface MenuCategory {
   restaurantId: string;
   name: string;
   sortOrder: number;
+  nameAr?: string;
+  nameFr?: string;
 }
 
 export type OrderStatus =

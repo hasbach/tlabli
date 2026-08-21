@@ -70,6 +70,17 @@ can run against a real database and send real WhatsApp orders.
    `/dashboard/settings` will show a save error if you try to change a
    toggle, but the POS/Kitchen print buttons on the order queue already work
    correctly using the same true/true/false defaults this migration sets.
+12. Also paste and run `supabase/sql/10_menu_translations.sql` — adds
+   optional Arabic/French text columns to `menu_categories`, `menu_items`,
+   and `item_addons`. Owners can fill these in from the menu builder (a
+   category's/item's/add-on's translation fields, entered when it's
+   created — items also let you add translations any time via Edit); a
+   blank translation just falls back to the original text on the storefront
+   when a customer switches language. This app's own buttons/labels were
+   already translated before this migration — this is specifically for
+   owner-entered menu content (dish names, descriptions, category names,
+   add-ons), which previously always showed in whatever language the owner
+   originally typed it in, regardless of the selected language.
 
 ## 2. WhatsApp order notifications
 
