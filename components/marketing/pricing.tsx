@@ -17,7 +17,7 @@ const tiers = [
   },
   {
     name: "Basic",
-    price: "$6",
+    price: "$15",
     period: "/month",
     description: "Everything you need to take real orders.",
     features: [
@@ -32,7 +32,7 @@ const tiers = [
   },
   {
     name: "Pro",
-    price: "$14",
+    price: "$25",
     period: "/month",
     description: "For growing, multi-location businesses.",
     features: [
