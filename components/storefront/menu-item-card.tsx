@@ -68,6 +68,7 @@ export function MenuItemCard({
     >
       <FoodImagePlaceholder
         label={item.title}
+        imageUrl={item.imageUrl}
         className="h-24 w-24 shrink-0 rounded-xl"
       />
 

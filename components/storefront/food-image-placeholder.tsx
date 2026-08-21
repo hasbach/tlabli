@@ -1,3 +1,4 @@
+import Image from "next/image";
 import {
   UtensilsCrossed,
   Coffee,
@@ -44,12 +45,29 @@ export function FoodImagePlaceholder({
   label,
   className,
   aspect = "square",
+  imageUrl,
 }: {
   label: string;
   className?: string;
   aspect?: "square" | "video";
+  imageUrl?: string | null;
 }) {
   const Icon = pickIcon(label);
+
+  if (imageUrl) {
+    return (
+      <div
+        className={cn(
+          "relative overflow-hidden rounded-[inherit]",
+          aspect === "square" ? "aspect-square" : "aspect-video",
+          className
+        )}
+      >
+        <Image src={imageUrl} alt={label} fill sizes="200px" className="object-cover" />
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(

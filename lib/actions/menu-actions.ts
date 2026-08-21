@@ -18,7 +18,10 @@ export interface NewMenuItemInput {
 }
 
 export type MenuItemPatch = Partial<
-  Pick<MenuItem, "title" | "description" | "price" | "isAvailable" | "availableFrom" | "availableUntil" | "categoryId">
+  Pick<
+    MenuItem,
+    "title" | "description" | "price" | "isAvailable" | "availableFrom" | "availableUntil" | "categoryId" | "imageUrl"
+  >
 >;
 
 export async function createMenuItem(input: NewMenuItemInput): Promise<ActionResult<MenuItem>> {
@@ -52,6 +55,7 @@ export async function updateMenuItem(id: string, patch: MenuItemPatch): Promise<
   if (patch.availableFrom !== undefined) update.available_from = patch.availableFrom || null;
   if (patch.availableUntil !== undefined) update.available_until = patch.availableUntil || null;
   if (patch.categoryId !== undefined) update.category_id = patch.categoryId;
+  if (patch.imageUrl !== undefined) update.image_url = patch.imageUrl;
 
   const { data, error } = await supabase.from("menu_items").update(update).eq("id", id).select().single();
 

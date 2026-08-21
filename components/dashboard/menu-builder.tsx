@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { FoodImagePlaceholder } from "@/components/storefront/food-image-placeholder";
 import { formatMoney } from "@/lib/currency";
+import { supabase } from "@/lib/supabase/client";
 import {
   createMenuItem,
   updateMenuItem,
@@ -21,6 +22,8 @@ import {
   createItemAddon,
   deleteItemAddon,
 } from "@/lib/actions/menu-actions";
+
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 
 type Draft = Partial<MenuItem> & { categoryId: string };
 
@@ -42,6 +45,7 @@ export function MenuBuilder({
 
   const [newAddonName, setNewAddonName] = useState("");
   const [newAddonPrice, setNewAddonPrice] = useState("");
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -107,6 +111,7 @@ export function MenuBuilder({
         return;
       }
       setItems((prev) => prev.map((i) => (i.id === result.data.id ? result.data : i)));
+      setEditing(null);
     } else {
       const result = await createMenuItem({
         categoryId: editing.categoryId,
@@ -122,8 +127,61 @@ export function MenuBuilder({
         return;
       }
       setItems((prev) => [...prev, result.data]);
+      // Stay open in edit mode for the item that was just created — add-ons
+      // and photo upload both require a real item id (FK/storage-path
+      // constraints), so closing here would strand the owner with no way
+      // to add either without reopening via the pencil icon.
+      setEditing(result.data);
     }
-    setEditing(null);
+  }
+
+  async function uploadPhoto(file: File) {
+    if (!editing?.id) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Please choose an image file.");
+      return;
+    }
+    if (file.size > MAX_PHOTO_BYTES) {
+      setError("Image must be smaller than 5MB.");
+      return;
+    }
+    setError(null);
+    setUploadingPhoto(true);
+
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${restaurantId}/${editing.id}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("menu-photos")
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if (uploadError) {
+      setUploadingPhoto(false);
+      setError(uploadError.message);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from("menu-photos").getPublicUrl(path);
+    // Cache-bust so replacing a photo doesn't keep showing the old cached image at the same URL.
+    const imageUrl = `${urlData.publicUrl}?v=${Date.now()}`;
+    const result = await updateMenuItem(editing.id, { imageUrl });
+    setUploadingPhoto(false);
+    if ("error" in result) {
+      setError(result.error);
+      return;
+    }
+    setEditing({ ...editing, imageUrl });
+    setItems((prev) => prev.map((i) => (i.id === editing.id ? { ...i, imageUrl } : i)));
+  }
+
+  async function removePhoto() {
+    if (!editing?.id) return;
+    setError(null);
+    const result = await updateMenuItem(editing.id, { imageUrl: null });
+    if ("error" in result) {
+      setError(result.error);
+      return;
+    }
+    setEditing({ ...editing, imageUrl: null });
+    setItems((prev) => prev.map((i) => (i.id === editing.id ? { ...i, imageUrl: null } : i)));
   }
 
   async function addAddon() {
@@ -191,7 +249,7 @@ export function MenuBuilder({
             <div className="grid gap-3 sm:grid-cols-2">
               {catItems.map((item) => (
                 <Card key={item.id} className="flex gap-3 p-3" style={{ opacity: item.isAvailable ? 1 : 0.55 }}>
-                  <FoodImagePlaceholder label={item.title} className="h-16 w-16 shrink-0 rounded-lg" />
+                  <FoodImagePlaceholder label={item.title} imageUrl={item.imageUrl} className="h-16 w-16 shrink-0 rounded-lg" />
                   <CardContent className="flex flex-1 flex-col gap-1 p-0">
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-sm font-semibold leading-tight">{item.title}</p>
@@ -287,9 +345,47 @@ export function MenuBuilder({
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                Leave the time fields empty for an item that&apos;s available whenever the restaurant is open. Photo upload
-                will be enabled once Supabase Storage is connected — see SETUP_TODO.md.
+                Leave the time fields empty for an item that&apos;s available whenever the restaurant is open.
               </p>
+
+              <div>
+                <Label>Photo</Label>
+                {editing.id ? (
+                  <div className="flex items-center gap-3">
+                    <FoodImagePlaceholder
+                      label={editing.title ?? ""}
+                      imageUrl={editing.imageUrl}
+                      className="h-16 w-16 shrink-0 rounded-lg"
+                    />
+                    <div className="flex flex-col gap-1.5">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={uploadingPhoto}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) uploadPhoto(file);
+                          e.target.value = "";
+                        }}
+                        className="text-xs"
+                      />
+                      {uploadingPhoto && <p className="text-xs text-muted-foreground">Uploading…</p>}
+                      {editing.imageUrl && !uploadingPhoto && (
+                        <button
+                          type="button"
+                          onClick={removePhoto}
+                          className="cursor-pointer text-left text-xs text-muted-foreground hover:text-destructive"
+                        >
+                          Remove photo
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-xs text-muted-foreground">Save the item first, then you can upload a photo here.</p>
+                )}
+              </div>
+
               <Button onClick={saveDraft} disabled={!editing.title || editing.price === undefined}>
                 Save item
               </Button>

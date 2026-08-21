@@ -114,9 +114,7 @@ over its monthly cap, or fails. These steps are what's left for you:
 
 1. Buy a domain (e.g. tlabli.com) and connect it to a Vercel project.
 2. Set `NEXT_PUBLIC_SITE_URL` in your production environment.
-3. Add your Supabase Storage hostname to `next.config.mjs` under
-   `images.remotePatterns` once photo uploads are live.
-4. `/admin` is now gated behind real login plus the `PLATFORM_ADMIN_EMAILS`
+3. `/admin` is now gated behind real login plus the `PLATFORM_ADMIN_EMAILS`
    allowlist (see section 1) and the `platform_admins` table/RLS policies
    (see section 1, step 8) — double-check both lists only contain emails you
    actually trust before you connect a real domain, since together they're
@@ -135,10 +133,11 @@ Per the pricing model in `PROJECT_INSTRUCTIONS.md`, billing is manual:
 ## 5. Content
 
 1. Real logo/wordmark (the current header uses a plain "T" monogram).
-2. Decide whether to keep the CSS/icon-based item placeholders (the current
-   approach — see `components/storefront/food-image-placeholder.tsx`) as the
-   permanent "no photo yet" state, since real menus should show each owner's
-   own food photos, not stock images.
+2. Menu item photos can now be uploaded per-item from the menu builder
+   (Supabase Storage's `menu-photos` bucket) — items without a photo still
+   fall back to the CSS/icon-based placeholder
+   (`components/storefront/food-image-placeholder.tsx`), which stays as the
+   permanent "no photo yet" state rather than a stock image.
 
 ## What's already done
 
