@@ -25,7 +25,7 @@ function FineDiningBody({
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="mx-auto flex max-w-xl items-center justify-between px-6 py-5">
+      <header className="mx-auto flex max-w-xl flex-wrap items-center justify-between gap-y-2 px-6 py-5">
         <div className="flex items-center gap-2">
           <Link
             href={`/${restaurant.slug}/track`}

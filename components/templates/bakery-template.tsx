@@ -25,7 +25,7 @@ function BakeryBody({
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 py-4">
+      <header className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-3 px-4 py-4">
         <div className="flex items-center gap-2">
           <Link
             href={`/${restaurant.slug}/track`}

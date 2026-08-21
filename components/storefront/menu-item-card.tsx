@@ -63,7 +63,7 @@ export function MenuItemCard({
 
   return (
     <div
-      className="group flex gap-4 rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-card"
+      className="group flex min-w-0 gap-4 rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-card"
       style={{ opacity: soldOut ? 0.6 : 1 }}
     >
       <FoodImagePlaceholder
@@ -72,9 +72,9 @@ export function MenuItemCard({
         className="h-24 w-24 shrink-0 rounded-xl"
       />
 
-      <div className="flex flex-1 flex-col gap-1.5">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold leading-snug">{item.title}</h3>
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <h3 className="min-w-0 font-semibold leading-snug">{item.title}</h3>
           <span className="whitespace-nowrap font-semibold text-primary">{priceLabel}</span>
         </div>
 

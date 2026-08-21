@@ -27,7 +27,7 @@ function CafeBody({
   return (
     <div className="min-h-screen bg-background text-foreground">
       <section className="relative px-4 pb-8 pt-6">
-        <div className="mx-auto flex max-w-2xl items-center justify-between">
+        <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-y-2">
           <div className="flex items-center gap-2">
             <Link
               href={`/${restaurant.slug}/track`}
