@@ -36,7 +36,12 @@ function FastFoodBody({
             </div>
             <div>
               <p className="text-lg font-extrabold leading-tight tracking-tight">{restaurant.name}</p>
-              <OpenBadge hours={restaurant.hours} openLabel={t("openNow")} closedLabel={t("closedNow")} />
+              <OpenBadge
+                hours={restaurant.hours}
+                openLabel={t("openNow")}
+                closedLabel={t("closedNow")}
+                temporarilyClosed={restaurant.temporarilyClosed}
+              />
             </div>
           </div>
           <div className="flex items-center gap-2">

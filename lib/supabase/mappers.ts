@@ -41,6 +41,8 @@ export function mapRestaurantRow(row: Record<string, unknown>): Restaurant {
     brandPrimaryColor: (row.brand_primary_color as string) ?? undefined,
     brandSecondaryColor: (row.brand_secondary_color as string) ?? undefined,
     headerImageUrl: (row.header_image_url as string) ?? undefined,
+    // Falls back to the same default as the SQL column (12_temporarily_closed.sql).
+    temporarilyClosed: (row.temporarily_closed as boolean | null | undefined) ?? false,
   };
 }
 

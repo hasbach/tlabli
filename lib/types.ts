@@ -45,6 +45,8 @@ export interface Restaurant {
   brandPrimaryColor?: string;
   brandSecondaryColor?: string;
   headerImageUrl?: string | null;
+  /** Manual override: forces the storefront's Open/Closed badge to closed regardless of the weekly schedule. */
+  temporarilyClosed: boolean;
 }
 
 export interface ItemAddon {

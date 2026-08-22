@@ -65,7 +65,12 @@ function CafeBody({
             <p className={`max-w-sm text-sm ${restaurant.headerImageUrl ? "text-white/90" : "text-muted-foreground"}`}>
               {restaurant.tagline}
             </p>
-            <OpenBadge hours={restaurant.hours} openLabel={t("openNow")} closedLabel={t("closedNow")} />
+            <OpenBadge
+              hours={restaurant.hours}
+              openLabel={t("openNow")}
+              closedLabel={t("closedNow")}
+              temporarilyClosed={restaurant.temporarilyClosed}
+            />
             <div className={`flex items-center gap-4 text-xs ${restaurant.headerImageUrl ? "text-white/90" : "text-muted-foreground"}`}>
               <span className="inline-flex items-center gap-1">
                 <MapPin className="h-3.5 w-3.5" /> {restaurant.address}

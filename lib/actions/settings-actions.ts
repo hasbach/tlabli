@@ -24,6 +24,9 @@ export type RestaurantSettingsPatch = Partial<
     | "brandPrimaryColor"
     | "brandSecondaryColor"
     | "headerImageUrl"
+    | "languages"
+    | "hours"
+    | "temporarilyClosed"
   >
 >;
 
@@ -47,6 +50,12 @@ export async function updateRestaurantSettings(
   if (patch.brandPrimaryColor !== undefined) update.brand_primary_color = patch.brandPrimaryColor || null;
   if (patch.brandSecondaryColor !== undefined) update.brand_secondary_color = patch.brandSecondaryColor || null;
   if (patch.headerImageUrl !== undefined) update.header_image_url = patch.headerImageUrl;
+  if (patch.languages !== undefined) {
+    if (patch.languages.length === 0) return { error: "At least one menu language is required." };
+    update.languages = patch.languages;
+  }
+  if (patch.hours !== undefined) update.hours = patch.hours;
+  if (patch.temporarilyClosed !== undefined) update.temporarily_closed = patch.temporarilyClosed;
 
   const { data, error } = await supabase.from("restaurants").update(update).eq("id", restaurantId).select().single();
 

@@ -62,7 +62,12 @@ function FineDiningBody({
             {restaurant.tagline}
           </p>
           <div className="mt-4 flex justify-center">
-            <OpenBadge hours={restaurant.hours} openLabel={t("openNow")} closedLabel={t("closedNow")} />
+            <OpenBadge
+              hours={restaurant.hours}
+              openLabel={t("openNow")}
+              closedLabel={t("closedNow")}
+              temporarilyClosed={restaurant.temporarilyClosed}
+            />
           </div>
         </div>
       </section>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Restaurant, Currency } from "@/lib/types";
+import type { Restaurant, Currency, Locale, BusinessHours } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,14 +11,53 @@ import { Badge } from "@/components/ui/badge";
 import { QRCodeBlock } from "@/components/storefront/qr-code-block";
 import { updateRestaurantSettings } from "@/lib/actions/settings-actions";
 
+const LOCALE_ORDER: Locale[] = ["en", "ar", "fr"];
+const LOCALE_LABELS: Record<Locale, string> = { en: "English", ar: "Arabic (العربية)", fr: "French (Français)" };
+
+const DAY_ORDER: BusinessHours["day"][] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+const DAY_LABELS: Record<BusinessHours["day"], string> = {
+  mon: "Monday",
+  tue: "Tuesday",
+  wed: "Wednesday",
+  thu: "Thursday",
+  fri: "Friday",
+  sat: "Saturday",
+  sun: "Sunday",
+};
+
+function getDayHours(hours: BusinessHours[], day: BusinessHours["day"]): BusinessHours {
+  return hours.find((h) => h.day === day) ?? { day, open: "09:00", close: "22:00", closed: false };
+}
+
 export function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
   const [form, setForm] = useState(restaurant);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [temporarilyClosed, setTemporarilyClosed] = useState(restaurant.temporarilyClosed);
+  const [temporarilyClosedError, setTemporarilyClosedError] = useState<string | null>(null);
 
   function update<K extends keyof Restaurant>(key: K, value: Restaurant[K]) {
     setForm((f) => ({ ...f, [key]: value }));
+    setSaved(false);
+  }
+
+  function toggleLanguage(locale: Locale) {
+    setForm((f) => {
+      const has = f.languages.includes(locale);
+      if (has && f.languages.length === 1) return f; // keep at least one language enabled
+      const next = has ? f.languages.filter((l) => l !== locale) : [...f.languages, locale];
+      // Keep canonical order so languages[0] (the default locale shown to customers) stays predictable.
+      return { ...f, languages: LOCALE_ORDER.filter((l) => next.includes(l)) };
+    });
+    setSaved(false);
+  }
+
+  function updateDayHours(day: BusinessHours["day"], patch: Partial<BusinessHours>) {
+    setForm((f) => {
+      const updated = { ...getDayHours(f.hours, day), ...patch };
+      return { ...f, hours: [...f.hours.filter((h) => h.day !== day), updated] };
+    });
     setSaved(false);
   }
 
@@ -33,6 +72,8 @@ export function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
       currency: form.currency,
       lbpExchangeRate: form.lbpExchangeRate,
       showBothCurrencies: form.showBothCurrencies,
+      languages: form.languages,
+      hours: form.hours,
     });
     setSaving(false);
     if ("error" in result) {
@@ -40,6 +81,22 @@ export function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
       return;
     }
     setSaved(true);
+  }
+
+  // Kept as an immediate, independent save (like the WhatsApp/printer toggles
+  // elsewhere in Settings) rather than folded into handleSave's single
+  // update — temporarily_closed is the newest column here, and bundling it
+  // into the same atomic update as name/tagline/currency/etc. would mean a
+  // restaurant on a database that hasn't run this migration yet can't save
+  // *any* profile change, not just this one, until it does.
+  async function toggleTemporarilyClosed(value: boolean) {
+    setTemporarilyClosed(value);
+    setTemporarilyClosedError(null);
+    const result = await updateRestaurantSettings(restaurant.id, { temporarilyClosed: value });
+    if ("error" in result) {
+      setTemporarilyClosed(!value);
+      setTemporarilyClosedError(result.error);
+    }
   }
 
   return (
@@ -65,6 +122,85 @@ export function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
             <div className="sm:col-span-2">
               <Label htmlFor="s-address">Address</Label>
               <Input id="s-address" value={form.address} onChange={(e) => update("address", e.target.value)} />
+            </div>
+            <div className="sm:col-span-2">
+              <Label>Menu languages</Label>
+              <div className="flex flex-wrap gap-4">
+                {LOCALE_ORDER.map((l) => {
+                  const checked = form.languages.includes(l);
+                  return (
+                    <div key={l} className="flex items-center gap-2">
+                      <Switch
+                        id={`s-lang-${l}`}
+                        checked={checked}
+                        disabled={checked && form.languages.length === 1}
+                        onCheckedChange={() => toggleLanguage(l)}
+                      />
+                      <Label htmlFor={`s-lang-${l}`} className="mb-0 cursor-pointer text-sm">
+                        {LOCALE_LABELS[l]}
+                      </Label>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Customers can switch between these languages on your live menu. The first one enabled is shown by
+                default.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Business hours</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 pt-0">
+            <div className="flex flex-col gap-1.5 rounded-lg border border-border p-3">
+              <div className="flex items-center gap-2">
+                <Switch id="s-temp-closed" checked={temporarilyClosed} onCheckedChange={toggleTemporarilyClosed} />
+                <Label htmlFor="s-temp-closed" className="mb-0 cursor-pointer">
+                  Temporarily closed — overrides the schedule below (use for holidays or emergencies)
+                </Label>
+              </div>
+              {temporarilyClosedError && <p className="text-xs text-destructive">{temporarilyClosedError}</p>}
+            </div>
+            <div className="flex flex-col gap-2">
+              {DAY_ORDER.map((day) => {
+                const dh = getDayHours(form.hours, day);
+                return (
+                  <div key={day} className="flex flex-wrap items-center gap-3">
+                    <span className="w-24 shrink-0 text-sm font-medium">{DAY_LABELS[day]}</span>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        id={`s-hours-closed-${day}`}
+                        checked={!!dh.closed}
+                        onCheckedChange={(v) => updateDayHours(day, { closed: v })}
+                      />
+                      <Label htmlFor={`s-hours-closed-${day}`} className="mb-0 cursor-pointer text-xs text-muted-foreground">
+                        Closed all day
+                      </Label>
+                    </div>
+                    {!dh.closed && (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="time"
+                          value={dh.open}
+                          onChange={(e) => updateDayHours(day, { open: e.target.value })}
+                          className="w-32"
+                        />
+                        <span className="text-xs text-muted-foreground">to</span>
+                        <Input
+                          type="time"
+                          value={dh.close}
+                          onChange={(e) => updateDayHours(day, { close: e.target.value })}
+                          className="w-32"
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>

@@ -91,6 +91,19 @@ can run against a real database and send real WhatsApp orders.
    the Branding card will show a save error on any change, but every
    storefront keeps rendering with its template's normal default colors in
    the meantime (nothing breaks, it just can't be customized yet).
+14. Also paste and run `supabase/sql/12_temporarily_closed.sql` — adds a
+   manual "temporarily closed" override to `restaurants`, settable from a
+   new "Business hours" card in `/dashboard/settings`. That same card also
+   now lets owners edit their weekly open/close schedule and pick which
+   menu languages (English/Arabic/French) are offered — both already
+   existed as data fields with no settings screen, so any restaurant
+   created through onboarding defaulted to English-only with no hours set
+   at all (which is why its "Open now" badge showed closed permanently,
+   and why the language switcher was invisible — it hides itself
+   correctly when there's only one language). Until this migration runs,
+   toggling "Temporarily closed" specifically will show a save error, but
+   the languages and weekly-hours fields already save correctly since
+   their columns already exist.
 
 ## 2. WhatsApp order notifications
 

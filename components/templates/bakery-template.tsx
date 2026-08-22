@@ -61,7 +61,12 @@ function BakeryBody({
             {restaurant.tagline}
           </p>
           <div className="mt-4 flex items-center justify-center">
-            <OpenBadge hours={restaurant.hours} openLabel={t("openNow")} closedLabel={t("closedNow")} />
+            <OpenBadge
+              hours={restaurant.hours}
+              openLabel={t("openNow")}
+              closedLabel={t("closedNow")}
+              temporarilyClosed={restaurant.temporarilyClosed}
+            />
           </div>
           <div className={`mt-3 flex items-center justify-center gap-4 text-xs ${restaurant.headerImageUrl ? "text-white/90" : "text-muted-foreground"}`}>
             <span className="inline-flex items-center gap-1">
