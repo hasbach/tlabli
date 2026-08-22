@@ -7,6 +7,7 @@ import { formatMoney, formatDualCurrency } from "@/lib/currency";
 import { FoodImagePlaceholder } from "./food-image-placeholder";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useCart } from "./cart-provider";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { localizedItemTitle, localizedItemDescription, localizedAddonName } from "@/lib/i18n/localized-menu-content";
@@ -27,6 +28,7 @@ export function MenuItemCard({
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
   const [variant, setVariant] = useState<string | undefined>(item.variants?.[0]);
   const [qty, setQty] = useState(1);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const chosenAddons = useMemo(
     () => item.addons.filter((a) => selectedAddons.includes(a.id)),
@@ -40,6 +42,8 @@ export function MenuItemCard({
 
   const isTimeWindowed = Boolean(item.availableFrom && item.availableUntil);
   const soldOut = !item.isAvailable;
+  const title = localizedItemTitle(item, locale);
+  const description = localizedItemDescription(item, locale);
 
   function toggleAddon(id: string) {
     setSelectedAddons((prev) => (prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]));
@@ -60,27 +64,15 @@ export function MenuItemCard({
     );
     setQty(1);
     setSelectedAddons([]);
+    setDetailOpen(false);
   }
 
-  return (
-    <div
-      className="group flex min-w-0 gap-4 rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-card"
-      style={{ opacity: soldOut ? 0.6 : 1 }}
-    >
-      <FoodImagePlaceholder
-        label={item.title}
-        imageUrl={item.imageUrl}
-        className="h-24 w-24 shrink-0 rounded-xl"
-      />
-
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <h3 className="min-w-0 font-semibold leading-snug">{localizedItemTitle(item, locale)}</h3>
-          <span className="whitespace-nowrap font-semibold text-primary">{priceLabel}</span>
-        </div>
-
-        <p className="text-sm text-muted-foreground line-clamp-2">{localizedItemDescription(item, locale)}</p>
-
+  // Shared between the compact inline card and the "view full card" sheet —
+  // same state/handlers either way, just rendered in two places so opening
+  // the sheet never loses in-progress variant/add-on/quantity picks.
+  function renderOrderControls() {
+    return (
+      <>
         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
           {item.isPopular && !soldOut && <Badge variant="default">{t("popular")}</Badge>}
           {soldOut && <Badge variant="destructive">{t("soldOut")}</Badge>}
@@ -97,7 +89,10 @@ export function MenuItemCard({
               <button
                 key={v}
                 type="button"
-                onClick={() => setVariant(v)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setVariant(v);
+                }}
                 className={`cursor-pointer rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
                   variant === v ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted"
                 }`}
@@ -114,7 +109,10 @@ export function MenuItemCard({
               <button
                 key={a.id}
                 type="button"
-                onClick={() => toggleAddon(a.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleAddon(a.id);
+                }}
                 className={`cursor-pointer rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
                   selectedAddons.includes(a.id)
                     ? "border-primary bg-primary/10 text-primary"
@@ -128,12 +126,15 @@ export function MenuItemCard({
         )}
 
         {!soldOut && (
-          <div className="mt-1.5 flex items-center justify-between">
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-2 rounded-lg border border-border">
               <button
                 type="button"
                 aria-label="Decrease quantity"
-                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setQty((q) => Math.max(1, q - 1));
+                }}
                 className="flex h-8 w-8 cursor-pointer items-center justify-center text-muted-foreground hover:text-foreground"
               >
                 <Minus className="h-3.5 w-3.5" />
@@ -142,19 +143,75 @@ export function MenuItemCard({
               <button
                 type="button"
                 aria-label="Increase quantity"
-                onClick={() => setQty((q) => q + 1)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setQty((q) => q + 1);
+                }}
                 className="flex h-8 w-8 cursor-pointer items-center justify-center text-muted-foreground hover:text-foreground"
               >
                 <Plus className="h-3.5 w-3.5" />
               </button>
             </div>
-            <Button size="sm" onClick={handleAdd} className="gap-1.5">
+            <Button
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAdd();
+              }}
+              className="gap-1.5"
+            >
               <ShoppingCart className="h-4 w-4" />
               {t("addToCart")}
             </Button>
           </div>
         )}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div
+        className="group flex min-w-0 gap-4 rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-card"
+        style={{ opacity: soldOut ? 0.6 : 1 }}
+      >
+        <button
+          type="button"
+          onClick={() => setDetailOpen(true)}
+          className="cursor-pointer"
+          aria-label={`View details for ${title}`}
+        >
+          <FoodImagePlaceholder label={title} imageUrl={item.imageUrl} className="h-24 w-24 shrink-0 rounded-xl" />
+        </button>
+
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <button type="button" onClick={() => setDetailOpen(true)} className="cursor-pointer text-left">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <h3 className="min-w-0 font-semibold leading-snug">{title}</h3>
+              <span className="whitespace-nowrap font-semibold text-primary">{priceLabel}</span>
+            </div>
+            <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
+          </button>
+
+          {renderOrderControls()}
+        </div>
       </div>
-    </div>
+
+      <Sheet open={detailOpen} onOpenChange={setDetailOpen}>
+        <SheetContent className="overflow-y-auto scrollbar-thin">
+          <SheetHeader>
+            <SheetTitle>{title}</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4 flex flex-col gap-3">
+            <FoodImagePlaceholder label={title} imageUrl={item.imageUrl} aspect="video" className="w-full rounded-xl" />
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-sm text-muted-foreground">{description}</p>
+              <span className="whitespace-nowrap font-semibold text-primary">{priceLabel}</span>
+            </div>
+            {renderOrderControls()}
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }
