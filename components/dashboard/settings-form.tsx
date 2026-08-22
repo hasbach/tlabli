@@ -29,8 +29,17 @@ function getDayHours(hours: BusinessHours[], day: BusinessHours["day"]): Busines
   return hours.find((h) => h.day === day) ?? { day, open: "09:00", close: "22:00", closed: false };
 }
 
+// The hours editor shows a 9:00-22:00 default for any day with no saved
+// entry — but that's only ever a *display* fallback. Filling every day in
+// up front (rather than lazily adding one only when its own row is
+// touched) means clicking Save persists the full week actually shown,
+// even for an owner who never touches a single day's inputs.
+function normalizeHours(hours: BusinessHours[]): BusinessHours[] {
+  return DAY_ORDER.map((day) => getDayHours(hours, day));
+}
+
 export function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
-  const [form, setForm] = useState(restaurant);
+  const [form, setForm] = useState(() => ({ ...restaurant, hours: normalizeHours(restaurant.hours) }));
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);

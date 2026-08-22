@@ -8,7 +8,7 @@
 // display strings are unambiguous even if that assumption ever changes.
 // -----------------------------------------------------------------------------
 
-const BEIRUT_OFFSET_MS = 3 * 60 * 60 * 1000;
+export const BEIRUT_OFFSET_MS = 3 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** ISO instant for the start (00:00:00) of the Beirut calendar day containing `date`. */
