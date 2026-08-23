@@ -158,7 +158,7 @@ export function MenuItemCard({
                 e.stopPropagation();
                 handleAdd();
               }}
-              className="gap-1.5"
+              className="gap-1.5 bg-secondary text-secondary-foreground hover:opacity-90"
             >
               <ShoppingCart className="h-4 w-4" />
               {t("addToCart")}
@@ -188,7 +188,7 @@ export function MenuItemCard({
           <button type="button" onClick={() => setDetailOpen(true)} className="cursor-pointer text-left">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <h3 className="min-w-0 font-semibold leading-snug">{title}</h3>
-              <span className="whitespace-nowrap font-semibold text-primary">{priceLabel}</span>
+              <span className="whitespace-nowrap font-semibold text-secondary">{priceLabel}</span>
             </div>
             <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
           </button>
@@ -206,7 +206,7 @@ export function MenuItemCard({
             <FoodImagePlaceholder label={title} imageUrl={item.imageUrl} aspect="video" className="w-full rounded-xl" />
             <div className="flex items-start justify-between gap-2">
               <p className="text-sm text-muted-foreground">{description}</p>
-              <span className="whitespace-nowrap font-semibold text-primary">{priceLabel}</span>
+              <span className="whitespace-nowrap font-semibold text-secondary">{priceLabel}</span>
             </div>
             {renderOrderControls()}
           </div>

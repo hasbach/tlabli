@@ -45,6 +45,8 @@ export interface Restaurant {
   brandPrimaryColor?: string;
   brandSecondaryColor?: string;
   headerImageUrl?: string | null;
+  /** Shown in the circular header badge in place of logoInitial when set. */
+  logoImageUrl?: string | null;
   /** Manual override: forces the storefront's Open/Closed badge to closed regardless of the weekly schedule. */
   temporarilyClosed: boolean;
 }

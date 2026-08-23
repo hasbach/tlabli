@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Croissant, MapPin, Phone, Search } from "lucide-react";
 import type { Restaurant } from "@/lib/types";
 import type { MenuSection } from "@/lib/menu";
@@ -51,8 +52,12 @@ function BakeryBody({
       >
         {restaurant.headerImageUrl && <div className="absolute inset-0 bg-black/45" />}
         <div className={restaurant.headerImageUrl ? "relative py-6" : undefined}>
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[1.75rem] bg-primary text-2xl font-bold text-primary-foreground shadow-soft">
-            {restaurant.logoInitial}
+          <div className="relative mx-auto mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-[1.75rem] bg-primary text-2xl font-bold text-primary-foreground shadow-soft">
+            {restaurant.logoImageUrl ? (
+              <Image src={restaurant.logoImageUrl} alt={restaurant.name} fill sizes="64px" className="object-cover" />
+            ) : (
+              restaurant.logoInitial
+            )}
           </div>
           <h1 className={`font-bakery text-4xl font-medium tracking-tight sm:text-5xl ${restaurant.headerImageUrl ? "text-white" : ""}`}>
             {restaurant.name}

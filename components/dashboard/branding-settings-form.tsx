@@ -16,7 +16,9 @@ export function BrandingSettingsForm({ restaurant }: { restaurant: Restaurant })
   const [primaryColor, setPrimaryColor] = useState(restaurant.brandPrimaryColor ?? "#dc2626");
   const [secondaryColor, setSecondaryColor] = useState(restaurant.brandSecondaryColor ?? "#f59e0b");
   const [headerImageUrl, setHeaderImageUrl] = useState(restaurant.headerImageUrl ?? null);
+  const [logoImageUrl, setLogoImageUrl] = useState(restaurant.logoImageUrl ?? null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,6 +86,50 @@ export function BrandingSettingsForm({ restaurant }: { restaurant: Restaurant })
       return;
     }
     setHeaderImageUrl(null);
+  }
+
+  async function uploadLogoImage(file: File) {
+    if (!file.type.startsWith("image/")) {
+      setError("Please choose an image file.");
+      return;
+    }
+    if (file.size > MAX_HEADER_IMAGE_BYTES) {
+      setError("Image must be smaller than 5MB.");
+      return;
+    }
+    setError(null);
+    setUploadingLogo(true);
+
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${restaurant.id}/logo.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("menu-photos")
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if (uploadError) {
+      setUploadingLogo(false);
+      setError(uploadError.message);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from("menu-photos").getPublicUrl(path);
+    const url = `${urlData.publicUrl}?v=${Date.now()}`;
+    const result = await updateRestaurantSettings(restaurant.id, { logoImageUrl: url });
+    setUploadingLogo(false);
+    if ("error" in result) {
+      setError(result.error);
+      return;
+    }
+    setLogoImageUrl(url);
+  }
+
+  async function removeLogoImage() {
+    setError(null);
+    const result = await updateRestaurantSettings(restaurant.id, { logoImageUrl: null });
+    if ("error" in result) {
+      setError(result.error);
+      return;
+    }
+    setLogoImageUrl(null);
   }
 
   return (
@@ -172,6 +218,43 @@ export function BrandingSettingsForm({ restaurant }: { restaurant: Restaurant })
             {saving ? "Saving…" : "Save changes"}
           </Button>
           {saved && <p className="text-sm text-success">Saved.</p>}
+        </div>
+
+        <div className="border-t border-border pt-4">
+          <Label>Logo</Label>
+          <p className="mb-2 text-xs text-muted-foreground">
+            Shown in the circular badge in your menu&apos;s header — leave it empty to keep showing your restaurant
+            name&apos;s first letter instead.
+          </p>
+          {logoImageUrl && (
+            <div
+              className="mb-2 h-16 w-16 rounded-full bg-cover bg-center"
+              style={{ backgroundImage: `url(${logoImageUrl})` }}
+            />
+          )}
+          <div className="flex items-center gap-3">
+            <input
+              type="file"
+              accept="image/*"
+              disabled={uploadingLogo}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) uploadLogoImage(file);
+                e.target.value = "";
+              }}
+              className="text-xs"
+            />
+            {uploadingLogo && <p className="text-xs text-muted-foreground">Uploading…</p>}
+            {logoImageUrl && !uploadingLogo && (
+              <button
+                type="button"
+                onClick={removeLogoImage}
+                className="cursor-pointer text-xs text-muted-foreground hover:text-destructive"
+              >
+                Remove
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="border-t border-border pt-4">

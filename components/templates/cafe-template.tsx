@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Coffee, MapPin, Phone, Search } from "lucide-react";
 import type { Restaurant } from "@/lib/types";
 import type { MenuSection } from "@/lib/menu";
@@ -54,10 +55,14 @@ function CafeBody({
           {restaurant.headerImageUrl && <div className="absolute inset-0 bg-black/45" />}
           <div className="relative mx-auto flex max-w-2xl flex-col items-center gap-3 py-6 text-center">
             <div
-              className="flex h-14 w-14 items-center justify-center rounded-full text-xl font-semibold text-white shadow-soft"
+              className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full text-xl font-semibold text-white shadow-soft"
               style={{ background: "var(--primary)" }}
             >
-              <Coffee className="h-6 w-6" />
+              {restaurant.logoImageUrl ? (
+                <Image src={restaurant.logoImageUrl} alt={restaurant.name} fill sizes="56px" className="object-cover" />
+              ) : (
+                <Coffee className="h-6 w-6" />
+              )}
             </div>
             <h1 className={`text-3xl font-semibold tracking-tight ${restaurant.headerImageUrl ? "text-white" : ""}`}>
               {restaurant.name}

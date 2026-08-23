@@ -104,6 +104,15 @@ can run against a real database and send real WhatsApp orders.
    toggling "Temporarily closed" specifically will show a save error, but
    the languages and weekly-hours fields already save correctly since
    their columns already exist.
+15. Also paste and run `supabase/sql/13_logo_image.sql` — adds an optional
+   logo image to `restaurants`. From `/dashboard/settings`, owners can
+   upload an image that replaces the letter-monogram fallback in the
+   circular (or, for Bakery, squircle) badge shown in their live menu's
+   header — reuses the same `menu-photos` Storage bucket already used for
+   menu item photos and the header image, so no new bucket or policy is
+   needed. Until this migration runs, the Logo upload will show a save
+   error, but every storefront keeps showing its existing letter/icon
+   fallback in the meantime.
 
 ## 2. WhatsApp order notifications
 

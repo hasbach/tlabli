@@ -38,7 +38,7 @@ export function FineDiningItemRow({ item, currency }: { item: MenuItem; currency
           type="button"
           aria-label={`Add ${item.title} to order`}
           onClick={() => addLine({ key: item.id, itemId: item.id, title: item.title, unitPrice: item.price, addons: [] })}
-          className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-primary text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+          className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-secondary text-secondary transition-colors hover:bg-secondary hover:text-secondary-foreground"
         >
           <Plus className="h-4 w-4" />
         </button>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Flame, MapPin, Phone, Search } from "lucide-react";
 import type { Restaurant } from "@/lib/types";
 import type { MenuSection } from "@/lib/menu";
@@ -31,8 +32,12 @@ function FastFoodBody({
       <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-lg font-extrabold text-primary-foreground">
-              {restaurant.logoInitial}
+            <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-lg font-extrabold text-primary-foreground">
+              {restaurant.logoImageUrl ? (
+                <Image src={restaurant.logoImageUrl} alt={restaurant.name} fill sizes="44px" className="object-cover" />
+              ) : (
+                restaurant.logoInitial
+              )}
             </div>
             <div>
               <p className="text-lg font-extrabold leading-tight tracking-tight">{restaurant.name}</p>

@@ -24,6 +24,7 @@ export type RestaurantSettingsPatch = Partial<
     | "brandPrimaryColor"
     | "brandSecondaryColor"
     | "headerImageUrl"
+    | "logoImageUrl"
     | "languages"
     | "hours"
     | "temporarilyClosed"
@@ -50,6 +51,7 @@ export async function updateRestaurantSettings(
   if (patch.brandPrimaryColor !== undefined) update.brand_primary_color = patch.brandPrimaryColor || null;
   if (patch.brandSecondaryColor !== undefined) update.brand_secondary_color = patch.brandSecondaryColor || null;
   if (patch.headerImageUrl !== undefined) update.header_image_url = patch.headerImageUrl;
+  if (patch.logoImageUrl !== undefined) update.logo_image_url = patch.logoImageUrl;
   if (patch.languages !== undefined) {
     if (patch.languages.length === 0) return { error: "At least one menu language is required." };
     update.languages = patch.languages;

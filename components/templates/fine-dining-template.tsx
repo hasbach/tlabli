@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Search } from "lucide-react";
 import type { Restaurant } from "@/lib/types";
 import type { MenuSection } from "@/lib/menu";
@@ -51,6 +52,11 @@ function FineDiningBody({
       >
         {restaurant.headerImageUrl && <div className="absolute inset-0 bg-black/50" />}
         <div className={`relative mx-auto max-w-xl ${restaurant.headerImageUrl ? "py-8" : ""}`}>
+          {restaurant.logoImageUrl && (
+            <div className="relative mx-auto mb-4 h-16 w-16 overflow-hidden rounded-full shadow-soft">
+              <Image src={restaurant.logoImageUrl} alt={restaurant.name} fill sizes="64px" className="object-cover" />
+            </div>
+          )}
           <p className={`text-xs font-semibold uppercase tracking-[0.3em] ${restaurant.headerImageUrl ? "text-white/90" : "text-secondary"}`}>
             Est. in Beirut
           </p>
