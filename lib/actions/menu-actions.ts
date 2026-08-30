@@ -122,6 +122,30 @@ export async function createMenuCategory(input: NewMenuCategoryInput): Promise<A
   return { data: mapMenuCategoryRow(data) };
 }
 
+export type MenuCategoryPatch = Partial<Pick<MenuCategory, "name" | "nameAr" | "nameFr">>;
+
+export async function updateMenuCategory(id: string, patch: MenuCategoryPatch): Promise<ActionResult<MenuCategory>> {
+  const supabase = createServerSupabaseClient();
+  const update: Record<string, unknown> = {};
+  if (patch.name !== undefined) update.name = patch.name;
+  if (patch.nameAr !== undefined) update.name_ar = patch.nameAr || null;
+  if (patch.nameFr !== undefined) update.name_fr = patch.nameFr || null;
+
+  const { data, error } = await supabase.from("menu_categories").update(update).eq("id", id).select().single();
+
+  if (error || !data) return { error: error?.message ?? "Failed to update category" };
+  revalidatePath("/dashboard/menu");
+  return { data: mapMenuCategoryRow(data) };
+}
+
+export async function deleteMenuCategory(id: string): Promise<ActionResult<true>> {
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.from("menu_categories").delete().eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/menu");
+  return { data: true };
+}
+
 export interface NewItemAddonInput {
   itemId: string;
   name: string;

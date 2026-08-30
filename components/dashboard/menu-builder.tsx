@@ -19,6 +19,8 @@ import {
   updateMenuItem,
   deleteMenuItem,
   createMenuCategory,
+  updateMenuCategory,
+  deleteMenuCategory,
   createItemAddon,
   deleteItemAddon,
 } from "@/lib/actions/menu-actions";
@@ -44,6 +46,12 @@ export function MenuBuilder({
   const [newCategoryNameAr, setNewCategoryNameAr] = useState("");
   const [newCategoryNameFr, setNewCategoryNameFr] = useState("");
   const [addingCategory, setAddingCategory] = useState(false);
+
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [categoryDraftName, setCategoryDraftName] = useState("");
+  const [categoryDraftNameAr, setCategoryDraftNameAr] = useState("");
+  const [categoryDraftNameFr, setCategoryDraftNameFr] = useState("");
+  const [savingCategory, setSavingCategory] = useState(false);
 
   const [newAddonName, setNewAddonName] = useState("");
   const [newAddonPrice, setNewAddonPrice] = useState("");
@@ -72,6 +80,47 @@ export function MenuBuilder({
     setNewCategoryName("");
     setNewCategoryNameAr("");
     setNewCategoryNameFr("");
+  }
+
+  function openEditCategory(cat: MenuCategory) {
+    setEditingCategoryId(cat.id);
+    setCategoryDraftName(cat.name);
+    setCategoryDraftNameAr(cat.nameAr ?? "");
+    setCategoryDraftNameFr(cat.nameFr ?? "");
+  }
+
+  function cancelEditCategory() {
+    setEditingCategoryId(null);
+  }
+
+  async function saveCategory() {
+    if (!editingCategoryId || !categoryDraftName.trim()) return;
+    setError(null);
+    setSavingCategory(true);
+    const result = await updateMenuCategory(editingCategoryId, {
+      name: categoryDraftName.trim(),
+      nameAr: categoryDraftNameAr.trim() || undefined,
+      nameFr: categoryDraftNameFr.trim() || undefined,
+    });
+    setSavingCategory(false);
+    if ("error" in result) {
+      setError(result.error);
+      return;
+    }
+    setCategoryList((prev) => prev.map((c) => (c.id === result.data.id ? result.data : c)));
+    setEditingCategoryId(null);
+  }
+
+  async function removeCategory(cat: MenuCategory) {
+    if (!window.confirm(`Delete category "${cat.name}"? This can't be undone.`)) return;
+    const previous = categoryList;
+    setError(null);
+    setCategoryList((prev) => prev.filter((c) => c.id !== cat.id));
+    const result = await deleteMenuCategory(cat.id);
+    if ("error" in result) {
+      setCategoryList(previous);
+      setError(result.error);
+    }
   }
 
   async function toggleAvailable(id: string) {
@@ -272,14 +321,63 @@ export function MenuBuilder({
 
       {categoryList.map((cat) => {
         const catItems = items.filter((i) => i.categoryId === cat.id);
+        const isEditingCategory = editingCategoryId === cat.id;
         return (
           <section key={cat.id}>
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-bold">{cat.name}</h2>
-              <Button size="sm" variant="outline" onClick={() => openNew(cat.id)} className="gap-1.5">
-                <Plus className="h-4 w-4" /> Add item
-              </Button>
-            </div>
+            {isEditingCategory ? (
+              <div className="mb-3 flex flex-wrap items-end gap-2">
+                <Input
+                  value={categoryDraftName}
+                  onChange={(e) => setCategoryDraftName(e.target.value)}
+                  placeholder="Category name"
+                  className="max-w-xs"
+                />
+                <Input
+                  value={categoryDraftNameAr}
+                  onChange={(e) => setCategoryDraftNameAr(e.target.value)}
+                  placeholder="Arabic name (optional)"
+                  dir="rtl"
+                  className="max-w-xs"
+                />
+                <Input
+                  value={categoryDraftNameFr}
+                  onChange={(e) => setCategoryDraftNameFr(e.target.value)}
+                  placeholder="French name (optional)"
+                  className="max-w-xs"
+                />
+                <Button size="sm" onClick={saveCategory} disabled={!categoryDraftName.trim() || savingCategory}>
+                  {savingCategory ? "Saving…" : "Save"}
+                </Button>
+                <Button size="sm" variant="outline" onClick={cancelEditCategory} disabled={savingCategory}>
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold">{cat.name}</h2>
+                  <button
+                    onClick={() => openEditCategory(cat)}
+                    className="cursor-pointer text-muted-foreground hover:text-foreground"
+                    aria-label="Edit category"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => removeCategory(cat)}
+                    disabled={catItems.length > 0}
+                    className="cursor-pointer text-muted-foreground hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label="Delete category"
+                    title={catItems.length > 0 ? "Delete or move its items first" : undefined}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => openNew(cat.id)} className="gap-1.5">
+                  <Plus className="h-4 w-4" /> Add item
+                </Button>
+              </div>
+            )}
             <div className="grid gap-3 sm:grid-cols-2">
               {catItems.map((item) => (
                 <Card key={item.id} className="flex gap-3 p-3" style={{ opacity: item.isAvailable ? 1 : 0.55 }}>
