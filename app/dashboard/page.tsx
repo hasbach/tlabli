@@ -70,6 +70,7 @@ export default async function DashboardOverviewPage() {
           posPrinterEnabled={restaurant.posPrinterEnabled}
           kitchenPrinterEnabled={restaurant.kitchenPrinterEnabled}
           barPrinterEnabled={restaurant.barPrinterEnabled}
+          receiptWidthMm={restaurant.receiptWidthMm}
           limit={6}
         />
       </div>

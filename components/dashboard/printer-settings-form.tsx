@@ -12,6 +12,7 @@ export function PrinterSettingsForm({ restaurant }: { restaurant: Restaurant }) 
   const [posEnabled, setPosEnabled] = useState(restaurant.posPrinterEnabled);
   const [kitchenEnabled, setKitchenEnabled] = useState(restaurant.kitchenPrinterEnabled);
   const [barEnabled, setBarEnabled] = useState(restaurant.barPrinterEnabled);
+  const [widthMm, setWidthMm] = useState(restaurant.receiptWidthMm);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +24,7 @@ export function PrinterSettingsForm({ restaurant }: { restaurant: Restaurant }) 
       posPrinterEnabled: posEnabled,
       kitchenPrinterEnabled: kitchenEnabled,
       barPrinterEnabled: barEnabled,
+      receiptWidthMm: widthMm,
     });
     setSaving(false);
     if ("error" in result) {
@@ -84,6 +86,31 @@ export function PrinterSettingsForm({ restaurant }: { restaurant: Restaurant }) 
           <Label htmlFor="printer-bar" className="mb-0 cursor-pointer">
             Bar printer — drink ticket, only if your restaurant has a separate bar station
           </Label>
+        </div>
+
+        <div>
+          <Label className="mb-2 block">Receipt paper width</Label>
+          <p className="mb-2 text-sm text-muted-foreground">
+            Match whatever roll is actually loaded in your printer — tickets print narrower or get clipped if this is
+            wrong.
+          </p>
+          <div className="flex gap-2">
+            {([58, 80] as const).map((mm) => (
+              <button
+                key={mm}
+                type="button"
+                onClick={() => {
+                  setWidthMm(mm);
+                  setSaved(false);
+                }}
+                className={`flex-1 cursor-pointer rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                  widthMm === mm ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-muted"
+                }`}
+              >
+                {mm}mm
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="flex items-center justify-between">

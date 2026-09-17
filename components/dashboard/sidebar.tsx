@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, UtensilsCrossed, ClipboardList, BarChart3, Settings, ExternalLink, LogOut, KeyRound } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, UtensilsCrossed, ClipboardList, BarChart3, Settings, ExternalLink, LogOut, KeyRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase/client";
 import { ChangePasswordControl } from "@/components/shared/change-password-control";
@@ -10,6 +10,7 @@ import type { Restaurant } from "@/lib/types";
 
 const nav = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+  { href: "/dashboard/pos", label: "Point of sale", icon: ShoppingCart },
   { href: "/dashboard/menu", label: "Menu builder", icon: UtensilsCrossed },
   { href: "/dashboard/orders", label: "Orders & queue", icon: ClipboardList },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },

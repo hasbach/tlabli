@@ -50,6 +50,7 @@ export default async function OrdersPage() {
           posPrinterEnabled={restaurant.posPrinterEnabled}
           kitchenPrinterEnabled={restaurant.kitchenPrinterEnabled}
           barPrinterEnabled={restaurant.barPrinterEnabled}
+          receiptWidthMm={restaurant.receiptWidthMm}
         />
       </div>
 

@@ -20,6 +20,7 @@ export type RestaurantSettingsPatch = Partial<
     | "posPrinterEnabled"
     | "kitchenPrinterEnabled"
     | "barPrinterEnabled"
+    | "receiptWidthMm"
     | "brandPalette"
     | "brandPrimaryColor"
     | "brandSecondaryColor"
@@ -47,6 +48,7 @@ export async function updateRestaurantSettings(
   if (patch.posPrinterEnabled !== undefined) update.pos_printer_enabled = patch.posPrinterEnabled;
   if (patch.kitchenPrinterEnabled !== undefined) update.kitchen_printer_enabled = patch.kitchenPrinterEnabled;
   if (patch.barPrinterEnabled !== undefined) update.bar_printer_enabled = patch.barPrinterEnabled;
+  if (patch.receiptWidthMm !== undefined) update.receipt_width_mm = patch.receiptWidthMm;
   if (patch.brandPalette !== undefined) update.brand_palette = patch.brandPalette;
   if (patch.brandPrimaryColor !== undefined) update.brand_primary_color = patch.brandPrimaryColor || null;
   if (patch.brandSecondaryColor !== undefined) update.brand_secondary_color = patch.brandSecondaryColor || null;

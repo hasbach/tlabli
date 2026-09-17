@@ -33,6 +33,9 @@ export function mapRestaurantRow(row: Record<string, unknown>): Restaurant {
     posPrinterEnabled: (row.pos_printer_enabled as boolean | null | undefined) ?? true,
     kitchenPrinterEnabled: (row.kitchen_printer_enabled as boolean | null | undefined) ?? true,
     barPrinterEnabled: (row.bar_printer_enabled as boolean | null | undefined) ?? false,
+    // Falls back to the same default as the SQL column (14_receipt_width.sql)
+    // so tickets still print at a sane width before that migration runs.
+    receiptWidthMm: ((row.receipt_width_mm as number | null | undefined) ?? 80) as Restaurant["receiptWidthMm"],
     // Falls back to the same default as the SQL column (11_branding.sql) —
     // 'template-default' means "no override, keep this template's own
     // hardcoded .theme-* colors" — so branding still renders correctly

@@ -21,6 +21,7 @@ export function OrderQueueBoard({
   posPrinterEnabled,
   kitchenPrinterEnabled,
   barPrinterEnabled,
+  receiptWidthMm,
   limit,
 }: {
   initialOrders: Order[];
@@ -29,6 +30,7 @@ export function OrderQueueBoard({
   posPrinterEnabled: boolean;
   kitchenPrinterEnabled: boolean;
   barPrinterEnabled: boolean;
+  receiptWidthMm: number;
   limit?: number;
 }) {
   const [orders, setOrders] = useState(initialOrders);
@@ -103,7 +105,7 @@ export function OrderQueueBoard({
   const clearPrintJob = useCallback(() => setPrintJob(null), []);
 
   function print(order: Order, role: PrintRole) {
-    setPrintJob({ order, role, restaurantName });
+    setPrintJob({ order, role, restaurantName, receiptWidthMm });
   }
 
   const printRoles: { role: PrintRole; label: string; enabled: boolean }[] = [

@@ -40,6 +40,8 @@ export interface Restaurant {
   posPrinterEnabled: boolean;
   kitchenPrinterEnabled: boolean;
   barPrinterEnabled: boolean;
+  /** Physical width of the receipt roll installed in the printer — the printed ticket's CSS width and @page size are set to this, not a hardcoded guess. */
+  receiptWidthMm: 58 | 80;
   /** 'template-default' (this template's hardcoded colors), a preset id from lib/branding.ts, or 'custom'. */
   brandPalette: string;
   brandPrimaryColor?: string;

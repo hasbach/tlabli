@@ -11,6 +11,8 @@ export interface PrintJob {
   order: Order;
   role: PrintRole;
   restaurantName: string;
+  /** Physical receipt roll width in mm (see Restaurant.receiptWidthMm) — defaults to 80 if omitted. */
+  receiptWidthMm?: number;
 }
 
 const ROLE_HEADING: Record<PrintRole, string | null> = {
@@ -46,46 +48,64 @@ export function PrintTicket({ job, onDone }: { job: PrintJob | null; onDone: () 
   const showPrices = role === "pos";
   const itemsSubtotal = order.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const addonsTotal = order.total - itemsSubtotal;
+  const widthMm = job.receiptWidthMm ?? 80;
 
   return createPortal(
-    <div id="print-ticket" className="font-mono text-xs leading-relaxed text-black">
-      <p className="text-center text-sm font-bold">{restaurantName}</p>
-      {heading && <p className="text-center font-bold">{heading}</p>}
-      <p>
-        Order #{order.queueNumber} — {fulfillmentLine(order)}
-      </p>
-      <hr className="my-1 border-black" />
-      {order.items.map((item, idx) => (
-        <div key={idx}>
-          <div className="flex justify-between gap-2">
-            <span>
-              {item.quantity}x {item.title}
-            </span>
-            {showPrices && <span>{formatMoney(item.unitPrice * item.quantity, order.currency)}</span>}
-          </div>
-          {item.addons.length > 0 && <p className="pl-3">+ {item.addons.join(", ")}</p>}
-        </div>
-      ))}
-      <hr className="my-1 border-black" />
-      {showPrices && (
-        <>
-          {addonsTotal > 0.005 && (
-            <div className="flex justify-between">
-              <span>Add-ons</span>
-              <span>{formatMoney(addonsTotal, order.currency)}</span>
-            </div>
-          )}
-          <div className="flex justify-between font-bold">
-            <span>TOTAL</span>
-            <span>{formatMoney(order.total, order.currency)}</span>
-          </div>
+    <>
+      {/* @page can't be driven by an element's inline style, and needs a
+          static length — so it's injected per print job here, matching
+          whatever roll width this restaurant configured in printer
+          settings, instead of the 80mm every restaurant used to get. */}
+      <style>{`@page { size: ${widthMm}mm auto; margin: 0; }`}</style>
+      <div
+        id="print-ticket"
+        className="flex flex-col font-mono text-xs leading-relaxed text-black"
+        style={{ width: `${widthMm}mm` }}
+      >
+        <div>
+          <p className="text-center text-sm font-bold">{restaurantName}</p>
+          {heading && <p className="text-center font-bold">{heading}</p>}
           <p>
-            {order.customerName} — {order.customerPhone}
+            Order #{order.queueNumber} — {fulfillmentLine(order)}
           </p>
-        </>
-      )}
-      <p>{new Date(order.createdAt).toLocaleString()}</p>
-    </div>,
+          <hr className="my-1 border-black" />
+        </div>
+        <div className="flex-1">
+          {order.items.map((item, idx) => (
+            <div key={idx}>
+              <div className="flex justify-between gap-2">
+                <span>
+                  {item.quantity}x {item.title}
+                </span>
+                {showPrices && <span>{formatMoney(item.unitPrice * item.quantity, order.currency)}</span>}
+              </div>
+              {item.addons.length > 0 && <p className="pl-3">+ {item.addons.join(", ")}</p>}
+            </div>
+          ))}
+        </div>
+        <div>
+          <hr className="my-1 border-black" />
+          {showPrices && (
+            <>
+              {addonsTotal > 0.005 && (
+                <div className="flex justify-between">
+                  <span>Add-ons</span>
+                  <span>{formatMoney(addonsTotal, order.currency)}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-bold">
+                <span>TOTAL</span>
+                <span>{formatMoney(order.total, order.currency)}</span>
+              </div>
+              <p>
+                {order.customerName} — {order.customerPhone}
+              </p>
+            </>
+          )}
+          <p>{new Date(order.createdAt).toLocaleString()}</p>
+        </div>
+      </div>
+    </>,
     document.body
   );
 }
