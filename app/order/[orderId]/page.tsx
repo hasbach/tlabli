@@ -21,6 +21,12 @@ export default async function OrderTrackingPage({ params }: { params: { orderId:
     .maybeSingle();
   const restaurant = restaurantRow ? mapRestaurantRow(restaurantRow) : null;
 
+  // drivers is staff-only under RLS; this SECURITY DEFINER RPC exposes just
+  // name + phone while the order is in progress (15_drivers.sql). Before that
+  // migration runs the call errors, data is null, and the card stays hidden.
+  const { data: driverRows } = await supabase.rpc("get_order_driver", { p_order_id: order.id });
+  const driver = (driverRows as { name: string; phone: string }[] | null)?.[0] ?? null;
+
   return (
     <div className="min-h-screen bg-muted/40 px-4 py-10">
       <div className="mx-auto max-w-md">
@@ -37,19 +43,19 @@ export default async function OrderTrackingPage({ params }: { params: { orderId:
           </CardContent>
         </Card>
 
-        {order.driver && (
+        {driver && (
           <Card className="mt-5 flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Truck className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm font-semibold">{order.driver.name}</p>
+                <p className="text-sm font-semibold">{driver.name}</p>
                 <p className="text-xs text-muted-foreground">Your driver</p>
               </div>
             </div>
             <Button size="sm" variant="outline" asChild>
-              <a href={`tel:${order.driver.phone}`} className="gap-1.5">
+              <a href={`tel:${driver.phone}`} className="gap-1.5">
                 <Phone className="h-3.5 w-3.5" /> Call
               </a>
             </Button>
