@@ -1,13 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { ArrowRight, MapPin, Printer, Store, Utensils, X } from "lucide-react";
-import type { Order } from "@/lib/types";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { ArrowRight, MapPin, Printer, Store, Truck, Utensils, X } from "lucide-react";
+import type { Driver, Order } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/currency";
 import { OrderStatusBadge, nextStatus } from "./order-status-badge";
 import { advanceOrderStatus } from "@/lib/actions/order-actions";
+import { assignOrderDriver } from "@/lib/actions/driver-actions";
 import { supabase } from "@/lib/supabase/client";
 import { PrintTicket } from "./print-ticket";
 import type { PrintJob, PrintRole } from "./print-ticket";
@@ -22,6 +24,7 @@ export function OrderQueueBoard({
   kitchenPrinterEnabled,
   barPrinterEnabled,
   receiptWidthMm,
+  drivers,
   limit,
 }: {
   initialOrders: Order[];
@@ -31,10 +34,16 @@ export function OrderQueueBoard({
   kitchenPrinterEnabled: boolean;
   barPrinterEnabled: boolean;
   receiptWidthMm: number;
+  drivers: Driver[];
   limit?: number;
 }) {
   const [orders, setOrders] = useState(initialOrders);
   const [printJob, setPrintJob] = useState<PrintJob | null>(null);
+  const [assignError, setAssignError] = useState<string | null>(null);
+  // The realtime handler is registered once per restaurant; read drivers
+  // through a ref so it always resolves driver_id against the latest list.
+  const driversRef = useRef(drivers);
+  driversRef.current = drivers;
 
   useEffect(() => {
     const channel = supabase
@@ -58,7 +67,8 @@ export function OrderQueueBoard({
               total: Number(row.total),
               currency: row.currency as Order["currency"],
               status: row.status as Order["status"],
-              driver: undefined,
+              driverId: (row.driver_id as string) ?? undefined,
+              driver: driversRef.current.find((d) => d.id === row.driver_id),
               promoCode: (row.promo_code as string) ?? undefined,
               createdAt: row.created_at as string,
             };
@@ -102,6 +112,22 @@ export function OrderQueueBoard({
     }
   }
 
+  async function assignDriver(order: Order, driverId: string | null) {
+    if ((order.driverId ?? null) === driverId) return;
+    if (order.status === "out_for_delivery" && order.driverId) {
+      const current = order.driver?.name ?? "The current driver";
+      if (!window.confirm(`${current} already picked this order up. Reassign anyway?`)) return;
+    }
+    const driver = drivers.find((d) => d.id === driverId);
+    setAssignError(null);
+    setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, driverId: driverId ?? undefined, driver } : o)));
+    const result = await assignOrderDriver(order.id, driverId);
+    if ("error" in result) {
+      setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, driverId: order.driverId, driver: order.driver } : o)));
+      setAssignError(result.error);
+    }
+  }
+
   const clearPrintJob = useCallback(() => setPrintJob(null), []);
 
   function print(order: Order, role: PrintRole) {
@@ -116,6 +142,7 @@ export function OrderQueueBoard({
 
   return (
     <>
+      {assignError && <p className="mb-3 text-sm text-destructive">{assignError}</p>}
       {active.length === 0 ? (
         <p className="text-sm text-muted-foreground">No active orders right now — kitchen&apos;s clear.</p>
       ) : (
@@ -139,6 +166,36 @@ export function OrderQueueBoard({
                       {order.orderType === "table" ? `Table ${order.tableNumber}` : order.orderType === "delivery" ? order.address : "Pickup"}
                     </p>
                   </div>
+
+                  {order.orderType === "delivery" && (
+                    <div className="flex items-center gap-2">
+                      <Truck className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      {drivers.length === 0 ? (
+                        <Link href="/dashboard/settings#drivers" className="text-xs text-primary underline">
+                          Add a driver
+                        </Link>
+                      ) : (
+                        <select
+                          aria-label={`Driver for order #${order.queueNumber}`}
+                          value={order.driverId ?? ""}
+                          onChange={(e) => assignDriver(order, e.target.value || null)}
+                          className="h-8 min-w-0 flex-1 rounded-md border border-border bg-background px-2 text-xs"
+                        >
+                          <option value="">Unassigned</option>
+                          {drivers.map((d) => (
+                            <option key={d.id} value={d.id}>
+                              {d.name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      {!order.driverId && (
+                        <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                          No driver
+                        </span>
+                      )}
+                    </div>
+                  )}
 
                   <ul className="flex-1 space-y-1 text-xs text-muted-foreground">
                     {order.items.map((i, idx) => (
@@ -167,9 +224,6 @@ export function OrderQueueBoard({
                   <div className="flex items-center justify-between border-t border-border pt-3">
                     <span className="text-sm font-bold">{formatMoney(order.total, order.currency)}</span>
                     <div className="flex items-center gap-1.5">
-                      {(order.status === "out_for_delivery" && order.orderType === "delivery") && (
-                        <span className="text-xs text-muted-foreground">{order.driver?.name}</span>
-                      )}
                       <Button
                         size="sm"
                         variant="ghost"
@@ -179,11 +233,10 @@ export function OrderQueueBoard({
                       >
                         <X className="h-3.5 w-3.5" />
                       </Button>
-                      {(order.status !== "out_for_delivery" || order.orderType !== "delivery") && (
-                        <Button size="sm" variant="outline" onClick={() => advance(order.id)} className="gap-1">
-                          Advance <ArrowRight className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
+                      <Button size="sm" variant="outline" onClick={() => advance(order.id)} className="gap-1">
+                        {order.status === "out_for_delivery" && order.orderType === "delivery" ? "Delivered" : "Advance"}{" "}
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </div>
                 </CardContent>

@@ -5,7 +5,7 @@ import { formatMoney } from "@/lib/currency";
 import { Card } from "@/components/ui/card";
 import { getCurrentRestaurant } from "@/lib/dashboard/current-restaurant";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { mapOrderRow } from "@/lib/supabase/mappers";
+import { mapDriverRow, mapOrderRow, ORDER_WITH_DRIVER_SELECT } from "@/lib/supabase/mappers";
 import { beirutStartOfDay } from "@/lib/beirut-time";
 
 export default async function OrdersPage() {
@@ -16,24 +16,26 @@ export default async function OrdersPage() {
   const supabase = createServerSupabaseClient();
   const startOfTodayISO = beirutStartOfDay(new Date()).toISOString();
 
-  const [{ data: activeRows }, { data: completedRows }] = await Promise.all([
+  const [{ data: activeRows }, { data: completedRows }, { data: driverRows }] = await Promise.all([
     supabase
       .from("orders")
-      .select("*")
+      .select(ORDER_WITH_DRIVER_SELECT)
       .eq("restaurant_id", restaurant.id)
       .not("status", "in", "(completed,cancelled)")
       .order("queue_number", { ascending: true }),
     supabase
       .from("orders")
-      .select("*")
+      .select(ORDER_WITH_DRIVER_SELECT)
       .eq("restaurant_id", restaurant.id)
       .in("status", ["completed", "cancelled"])
       .gte("created_at", startOfTodayISO)
       .order("queue_number", { ascending: true }),
+    supabase.from("drivers").select("*").eq("restaurant_id", restaurant.id).order("name"),
   ]);
 
   const orders = (activeRows ?? []).map(mapOrderRow);
   const completed = (completedRows ?? []).map(mapOrderRow);
+  const drivers = (driverRows ?? []).map(mapDriverRow).filter((d) => d.active);
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -51,6 +53,7 @@ export default async function OrdersPage() {
           kitchenPrinterEnabled={restaurant.kitchenPrinterEnabled}
           barPrinterEnabled={restaurant.barPrinterEnabled}
           receiptWidthMm={restaurant.receiptWidthMm}
+          drivers={drivers}
         />
       </div>
 

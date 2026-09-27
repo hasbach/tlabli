@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { getCurrentRestaurant } from "@/lib/dashboard/current-restaurant";
 import { getAnalyticsSnapshot } from "@/lib/analytics";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { mapOrderRow } from "@/lib/supabase/mappers";
+import { mapDriverRow, mapOrderRow, ORDER_WITH_DRIVER_SELECT } from "@/lib/supabase/mappers";
 
 export default async function DashboardOverviewPage() {
   const current = await getCurrentRestaurant();
@@ -16,18 +16,20 @@ export default async function DashboardOverviewPage() {
   const { restaurant } = current;
 
   const supabase = createServerSupabaseClient();
-  const [{ data: orderRows }, analytics] = await Promise.all([
+  const [{ data: orderRows }, analytics, { data: driverRows }] = await Promise.all([
     supabase
       .from("orders")
-      .select("*")
+      .select(ORDER_WITH_DRIVER_SELECT)
       .eq("restaurant_id", restaurant.id)
       .not("status", "in", "(completed,cancelled)")
       .order("queue_number", { ascending: true })
       .limit(6),
     getAnalyticsSnapshot(restaurant.id, restaurant.currency),
+    supabase.from("drivers").select("*").eq("restaurant_id", restaurant.id).order("name"),
   ]);
 
   const orders = (orderRows ?? []).map(mapOrderRow);
+  const drivers = (driverRows ?? []).map(mapDriverRow).filter((d) => d.active);
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -71,6 +73,7 @@ export default async function DashboardOverviewPage() {
           kitchenPrinterEnabled={restaurant.kitchenPrinterEnabled}
           barPrinterEnabled={restaurant.barPrinterEnabled}
           receiptWidthMm={restaurant.receiptWidthMm}
+          drivers={drivers}
           limit={6}
         />
       </div>
