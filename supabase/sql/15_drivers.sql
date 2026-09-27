@@ -33,10 +33,12 @@ create index if not exists order_driver_events_restaurant_id_idx on order_driver
 -- Append-only for staff: no update/delete policy exists. Driver-side rows are
 -- written by the SECURITY DEFINER functions below.
 alter table order_driver_events enable row level security;
+drop policy if exists "staff read order_driver_events" on order_driver_events;
 create policy "staff read order_driver_events" on order_driver_events for select
   using (is_staff_of(restaurant_id));
+drop policy if exists "staff insert order_driver_events" on order_driver_events;
 create policy "staff insert order_driver_events" on order_driver_events for insert
-  with check (is_staff_of(restaurant_id));
+  with check (is_staff_of(restaurant_id) and actor = 'staff');
 
 -- ---------------------------------------------------------------------------
 -- Token helpers
@@ -52,7 +54,10 @@ as $$
 $$;
 
 -- Returns the active driver owning this token, or a NULL row. Not granted to
--- anyone — only called from the SECURITY DEFINER functions below.
+-- anyone (revoked from public, anon, and authenticated below) — only called
+-- from the SECURITY DEFINER functions below, which run with the definer's
+-- own privileges. It must never be reachable directly: it is SECURITY
+-- DEFINER and returns the full drivers row, including token_hash.
 create or replace function driver_from_token(p_token text)
 returns public.drivers
 language sql
@@ -125,7 +130,10 @@ begin
   end if;
 
   if p_driver_id is not null then
-    select * into v_driver from public.drivers where id = p_driver_id;
+    -- FOR SHARE: blocks on a concurrent set_driver_active(false) for this
+    -- driver until it commits, so this can never assign an order to a driver
+    -- that deactivation just unassigned everything from.
+    select * into v_driver from public.drivers where id = p_driver_id for share;
     if v_driver.id is null or v_driver.restaurant_id <> v_order.restaurant_id then
       raise exception 'driver_not_found';
     end if;
@@ -172,14 +180,17 @@ begin
   set active = false, token_hash = null, token_created_at = null
   where id = p_driver_id;
 
+  -- Single statement: the set of orders unassigned and the set of orders
+  -- logged are read from the same CTE, so they can never disagree.
+  with u as (
+    update public.orders
+    set driver_id = null
+    where driver_id = p_driver_id and status not in ('completed', 'cancelled')
+    returning restaurant_id, id
+  )
   insert into public.order_driver_events (restaurant_id, order_id, driver_id, event, actor)
-  select o.restaurant_id, o.id, o.driver_id, 'unassigned', 'staff'
-  from public.orders o
-  where o.driver_id = p_driver_id and o.status not in ('completed', 'cancelled');
-
-  update public.orders
-  set driver_id = null
-  where driver_id = p_driver_id and status not in ('completed', 'cancelled');
+  select u.restaurant_id, u.id, p_driver_id, 'unassigned', 'staff'
+  from u;
   get diagnostics v_unassigned = row_count;
 
   return v_unassigned;
@@ -335,24 +346,28 @@ $$;
 -- Grants
 -- ---------------------------------------------------------------------------
 
-revoke execute on function driver_token_hash(text) from public;
+-- Supabase grants EXECUTE on new public-schema functions to anon,
+-- authenticated, and service_role by default (default privileges), so
+-- `revoke ... from public` alone is not enough — it must be revoked from
+-- anon and authenticated explicitly too, then re-granted only where intended.
+revoke execute on function driver_token_hash(text) from public, anon, authenticated;
 grant execute on function driver_token_hash(text) to authenticated;
 
-revoke execute on function driver_from_token(text) from public;
+revoke execute on function driver_from_token(text) from public, anon, authenticated;
 
-revoke execute on function reset_driver_link(uuid) from public;
+revoke execute on function reset_driver_link(uuid) from public, anon, authenticated;
 grant execute on function reset_driver_link(uuid) to authenticated;
-revoke execute on function assign_order_driver(uuid, uuid) from public;
+revoke execute on function assign_order_driver(uuid, uuid) from public, anon, authenticated;
 grant execute on function assign_order_driver(uuid, uuid) to authenticated;
-revoke execute on function set_driver_active(uuid, boolean) from public;
+revoke execute on function set_driver_active(uuid, boolean) from public, anon, authenticated;
 grant execute on function set_driver_active(uuid, boolean) to authenticated;
 
-revoke execute on function driver_get_orders(text) from public;
+revoke execute on function driver_get_orders(text) from public, anon, authenticated;
 grant execute on function driver_get_orders(text) to anon, authenticated;
-revoke execute on function driver_mark_picked_up(text, uuid) from public;
+revoke execute on function driver_mark_picked_up(text, uuid) from public, anon, authenticated;
 grant execute on function driver_mark_picked_up(text, uuid) to anon, authenticated;
-revoke execute on function driver_mark_delivered(text, uuid) from public;
+revoke execute on function driver_mark_delivered(text, uuid) from public, anon, authenticated;
 grant execute on function driver_mark_delivered(text, uuid) to anon, authenticated;
 
-revoke execute on function get_order_driver(uuid) from public;
+revoke execute on function get_order_driver(uuid) from public, anon, authenticated;
 grant execute on function get_order_driver(uuid) to anon, authenticated;

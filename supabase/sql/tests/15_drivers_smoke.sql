@@ -14,8 +14,10 @@ begin;
 do $$
 declare
   v_restaurant uuid;
+  v_restaurant2 uuid;
   v_driver_a uuid;
   v_driver_b uuid;
+  v_driver_c uuid;
   v_order uuid;
   v_order2 uuid;
   v_pickup_order uuid;
@@ -25,6 +27,17 @@ declare
   v_json jsonb;
   v_ok boolean;
 begin
+  -- Grants: anon must never reach driver_from_token (it's SECURITY DEFINER
+  -- and returns the full drivers row, including token_hash) or the
+  -- owner-side RPCs; driver-side RPCs stay open to anon (the token is the
+  -- only credential a driver has).
+  assert not has_function_privilege('anon', 'public.driver_from_token(text)', 'execute'), 'anon cannot call driver_from_token';
+  assert not has_function_privilege('authenticated', 'public.driver_from_token(text)', 'execute'), 'authenticated cannot call driver_from_token';
+  assert not has_function_privilege('anon', 'public.reset_driver_link(uuid)', 'execute'), 'anon cannot call reset_driver_link';
+  assert not has_function_privilege('anon', 'public.assign_order_driver(uuid, uuid)', 'execute'), 'anon cannot call assign_order_driver';
+  assert not has_function_privilege('anon', 'public.set_driver_active(uuid, boolean)', 'execute'), 'anon cannot call set_driver_active';
+  assert has_function_privilege('anon', 'public.driver_get_orders(text)', 'execute'), 'anon can call driver_get_orders';
+
   insert into public.restaurants (name, slug, type, template_id)
   values ('Smoke Test', 'smoke-test-drivers-' || gen_random_uuid(), 'fast-food', 'fast-food')
   returning id into v_restaurant;
@@ -37,6 +50,21 @@ begin
   insert into public.orders (restaurant_id, queue_number, customer_name, customer_phone, order_type, address, items, total, currency)
   values (v_restaurant, 1, 'Customer', '+96170000003', 'delivery', 'Hamra St', '[]', 10, 'USD')
   returning id into v_order;
+
+  -- A driver from another restaurant can't be assigned, even to an
+  -- unassigned order in this restaurant.
+  insert into public.restaurants (name, slug, type, template_id)
+  values ('Smoke Test 2', 'smoke-test-drivers-2-' || gen_random_uuid(), 'fast-food', 'fast-food')
+  returning id into v_restaurant2;
+  insert into public.drivers (restaurant_id, name, phone) values (v_restaurant2, 'Driver C', '+96170000006')
+  returning id into v_driver_c;
+  begin
+    perform public.assign_order_driver(v_order, v_driver_c);
+    v_ok := false;
+  exception when others then
+    v_ok := sqlerrm = 'driver_not_found';
+  end;
+  assert v_ok, 'driver from another restaurant gets driver_not_found';
 
   -- Links: 48 hex chars, stored hashed.
   v_token_a := public.reset_driver_link(v_driver_a);
@@ -61,6 +89,7 @@ begin
   assert v_json->'driver'->>'name' = 'Driver A', 'driver name returned';
   assert jsonb_array_length(public.driver_get_orders(v_token_b)->'orders') = 0, 'driver B sees nothing';
   assert (select count(*) from public.get_order_driver(v_order)) = 1, 'customer sees the driver';
+  assert (select name from public.get_order_driver(v_order)) = 'Driver A', 'customer sees the right driver name';
 
   -- Picked up.
   perform public.driver_mark_picked_up(v_token_a, v_order);
