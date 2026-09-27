@@ -10,6 +10,7 @@ import { localizedCategoryName } from "@/lib/i18n/localized-menu-content";
 import { resolveBrandColors, brandColorsToCssVars } from "@/lib/branding";
 import { CartProvider } from "@/components/storefront/cart-provider";
 import { CartDrawer } from "@/components/storefront/cart-drawer";
+import { RecentOrdersBanner } from "@/components/storefront/recent-orders-banner";
 import { CartTrigger } from "@/components/storefront/cart-trigger";
 import { LanguageSwitcher } from "@/components/storefront/language-switcher";
 import { OpenBadge } from "@/components/storefront/open-badge";
@@ -100,6 +101,7 @@ function BakeryBody({
       </nav>
 
       <main className="mx-auto max-w-2xl px-4 pb-16">
+        <RecentOrdersBanner restaurantId={restaurant.id} />
         {sections.map((s, idx) => (
           <section key={s.category.id} id={s.category.id} className={idx > 0 ? "mt-10" : ""}>
             <div className="mb-4 flex items-center gap-2">

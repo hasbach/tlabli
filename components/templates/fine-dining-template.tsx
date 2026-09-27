@@ -10,6 +10,7 @@ import { localizedCategoryName } from "@/lib/i18n/localized-menu-content";
 import { resolveBrandColors, brandColorsToCssVars } from "@/lib/branding";
 import { CartProvider } from "@/components/storefront/cart-provider";
 import { CartDrawer } from "@/components/storefront/cart-drawer";
+import { RecentOrdersBanner } from "@/components/storefront/recent-orders-banner";
 import { CartTrigger } from "@/components/storefront/cart-trigger";
 import { LanguageSwitcher } from "@/components/storefront/language-switcher";
 import { OpenBadge } from "@/components/storefront/open-badge";
@@ -79,6 +80,7 @@ function FineDiningBody({
       </section>
 
       <main className="mx-auto max-w-xl px-6 pb-20">
+        <RecentOrdersBanner restaurantId={restaurant.id} />
         {sections.map((s, idx) => (
           <section key={s.category.id} className={idx > 0 ? "mt-10" : ""}>
             <h2 className="text-center text-xs font-semibold uppercase tracking-[0.3em] text-secondary">

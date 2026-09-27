@@ -10,6 +10,7 @@ import { localizedCategoryName } from "@/lib/i18n/localized-menu-content";
 import { resolveBrandColors, brandColorsToCssVars } from "@/lib/branding";
 import { CartProvider } from "@/components/storefront/cart-provider";
 import { CartDrawer } from "@/components/storefront/cart-drawer";
+import { RecentOrdersBanner } from "@/components/storefront/recent-orders-banner";
 import { CartTrigger } from "@/components/storefront/cart-trigger";
 import { LanguageSwitcher } from "@/components/storefront/language-switcher";
 import { OpenBadge } from "@/components/storefront/open-badge";
@@ -89,6 +90,7 @@ function FastFoodBody({
       </section>
 
       <main className="mx-auto max-w-3xl px-4 py-8">
+        <RecentOrdersBanner restaurantId={restaurant.id} />
         <Tabs defaultValue={sections[0]?.category.id}>
           <TabsList className="w-full justify-start">
             {sections.map((s) => (

@@ -12,6 +12,7 @@ import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { formatMoney } from "@/lib/currency";
 import { buildWhatsAppLink, buildWhatsAppOrderMessage } from "@/lib/whatsapp";
 import { createOrder } from "@/lib/actions/order-actions";
+import { rememberOrder } from "@/lib/recent-orders";
 import type { Currency } from "@/lib/types";
 
 type OrderType = "delivery" | "pickup" | "table";
@@ -114,6 +115,7 @@ export function CartDrawer({
     setSubmitting(false);
     if ("data" in result) {
       setPlacedOrderId(result.data.id);
+      rememberOrder({ id: result.data.id, restaurantId, queueNumber: result.data.queueNumber });
       if (whatsappCloudApiAvailable && !result.data.whatsappNotified) {
         setFallbackWhatsAppLink(link);
       }
