@@ -122,8 +122,15 @@ can run against a real database and send real WhatsApp orders.
    Picked up / Delivered at `/driver/<link>` — no account or password.
    Optionally run `supabase/sql/tests/15_drivers_smoke.sql` afterwards: it
    rolls itself back and should end with "drivers smoke test: all assertions
-   passed". Until the migration runs, adding a driver or assigning one shows a
-   save error, but everything else keeps working.
+   passed". Until the migration runs, adding a driver still saves, but their
+   link couldn't be created, and assigning a driver shows a save error.
+17. Also paste and run `supabase/sql/16_driver_hardening.sql` — closes a hole
+   where anyone could create an order pre-assigned to a driver (the anon
+   checkout insert policy previously allowed any `driver_id`/`status`), and
+   scopes the driver-facing functions from step 16 to the driver's own
+   restaurant as defence in depth. Re-run
+   `supabase/sql/tests/15_drivers_smoke.sql` afterwards to confirm nothing
+   regressed.
 
 ## 2. WhatsApp order notifications
 

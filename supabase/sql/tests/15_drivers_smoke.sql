@@ -1,7 +1,10 @@
 -- 15_drivers_smoke.sql
 -- Smoke test for 15_drivers.sql. Paste into Supabase Studio's SQL Editor and
--- run AFTER 15_drivers.sql. Runs entirely inside a transaction that is rolled
--- back at the end, so it leaves no data behind. Success = the notice
+-- run AFTER 15_drivers.sql. Also valid, and should be re-run, after
+-- 16_driver_hardening.sql — that migration only tightens RLS/scoping and
+-- keeps every function's signature and behavior asserted here unchanged.
+-- Runs entirely inside a transaction that is rolled back at the end, so it
+-- leaves no data behind. Success = the notice
 -- "drivers smoke test: all assertions passed" and no error.
 --
 -- The SQL Editor runs as `postgres`, which bypasses RLS — so this checks the
@@ -37,6 +40,10 @@ begin
   assert not has_function_privilege('anon', 'public.assign_order_driver(uuid, uuid)', 'execute'), 'anon cannot call assign_order_driver';
   assert not has_function_privilege('anon', 'public.set_driver_active(uuid, boolean)', 'execute'), 'anon cannot call set_driver_active';
   assert has_function_privilege('anon', 'public.driver_get_orders(text)', 'execute'), 'anon can call driver_get_orders';
+  assert has_function_privilege('authenticated', 'public.reset_driver_link(uuid)', 'execute'), 'authenticated can call reset_driver_link';
+  assert has_function_privilege('authenticated', 'public.assign_order_driver(uuid, uuid)', 'execute'), 'authenticated can call assign_order_driver';
+  assert has_function_privilege('authenticated', 'public.set_driver_active(uuid, boolean)', 'execute'), 'authenticated can call set_driver_active';
+  assert not has_function_privilege('anon', 'public.driver_token_hash(text)', 'execute'), 'anon cannot call driver_token_hash';
 
   insert into public.restaurants (name, slug, type, template_id)
   values ('Smoke Test', 'smoke-test-drivers-' || gen_random_uuid(), 'fast-food', 'fast-food')
