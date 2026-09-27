@@ -5,7 +5,7 @@
 // keeps working unchanged against these mapped objects.
 // -----------------------------------------------------------------------------
 
-import type { Restaurant, MenuCategory, MenuItem, ItemAddon, Order, OrderLineItem, StaffUser, Subscription, WhatsAppSettings } from "@/lib/types";
+import type { Restaurant, MenuCategory, MenuItem, ItemAddon, Order, OrderLineItem, StaffUser, Subscription, WhatsAppSettings, Driver } from "@/lib/types";
 
 export function mapRestaurantRow(row: Record<string, unknown>): Restaurant {
   return {
@@ -92,6 +92,23 @@ export function mapMenuItemRow(row: Record<string, unknown>, addons: ItemAddon[]
   };
 }
 
+// Staff pages embed the assigned driver in their order queries with this
+// select. Only id/name/phone — columns that exist even before
+// 15_drivers.sql runs, so the queue keeps loading pre-migration.
+export const ORDER_WITH_DRIVER_SELECT = "*, driver:drivers(id, name, phone)";
+
+export function mapDriverRow(row: Record<string, unknown>): Driver {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    phone: row.phone as string,
+    // Falls back to the SQL column default (15_drivers.sql) so drivers still
+    // list correctly before that migration is applied.
+    active: (row.active as boolean | null | undefined) ?? true,
+    linkCreatedAt: (row.token_created_at as string) ?? undefined,
+  };
+}
+
 export function mapOrderRow(row: Record<string, unknown>): Order {
   return {
     id: row.id as string,
@@ -106,7 +123,8 @@ export function mapOrderRow(row: Record<string, unknown>): Order {
     total: Number(row.total),
     currency: row.currency as Order["currency"],
     status: row.status as Order["status"],
-    driver: undefined,
+    driverId: (row.driver_id as string) ?? undefined,
+    driver: row.driver ? mapDriverRow(row.driver as Record<string, unknown>) : undefined,
     promoCode: (row.promo_code as string) ?? undefined,
     createdAt: row.created_at as string,
   };

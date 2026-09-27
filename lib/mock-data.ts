@@ -430,7 +430,7 @@ export const menuItems: MenuItem[] = [
   },
 ];
 
-const driverJoe: Driver = { id: "d-1", name: "Jad K.", phone: "+96171987654" };
+const driverJoe: Driver = { id: "d-1", name: "Jad K.", phone: "+96171987654", active: true };
 
 export const orders: Order[] = [
   {

@@ -110,6 +110,10 @@ export interface Driver {
   id: string;
   name: string;
   phone: string;
+  /** Inactive drivers can't be assigned and their link doesn't work. */
+  active: boolean;
+  /** When the current link was issued; undefined = no working link. Never holds the token itself. */
+  linkCreatedAt?: string;
 }
 
 export interface Order {
@@ -125,6 +129,7 @@ export interface Order {
   total: number;
   currency: Currency;
   status: OrderStatus;
+  driverId?: string;
   driver?: Driver;
   promoCode?: string;
   createdAt: string;
