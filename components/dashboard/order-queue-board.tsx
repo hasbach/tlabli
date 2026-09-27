@@ -39,7 +39,7 @@ export function OrderQueueBoard({
 }) {
   const [orders, setOrders] = useState(initialOrders);
   const [printJob, setPrintJob] = useState<PrintJob | null>(null);
-  const [assignError, setAssignError] = useState<string | null>(null);
+  const [boardError, setBoardError] = useState<string | null>(null);
   // The realtime handler is registered once per restaurant; read drivers
   // through a ref so it always resolves driver_id against the latest list.
   const driversRef = useRef(drivers);
@@ -95,20 +95,27 @@ export function OrderQueueBoard({
     const order = orders.find((o) => o.id === id);
     if (!order) return;
     const target = nextStatus(order.status);
+    if (order.orderType === "delivery" && order.status === "out_for_delivery") {
+      if (!window.confirm(`Mark order #${order.queueNumber} as delivered?`)) return;
+    }
+    setBoardError(null);
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: target } : o)));
-    const result = await advanceOrderStatus(id, target);
+    const result = await advanceOrderStatus(id, target, order.status);
     if ("error" in result) {
       setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: order.status } : o)));
+      setBoardError(result.error);
     }
   }
 
   async function cancel(id: string) {
     const order = orders.find((o) => o.id === id);
     if (!order) return;
+    setBoardError(null);
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: "cancelled" } : o)));
-    const result = await advanceOrderStatus(id, "cancelled");
+    const result = await advanceOrderStatus(id, "cancelled", order.status);
     if ("error" in result) {
       setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: order.status } : o)));
+      setBoardError(result.error);
     }
   }
 
@@ -119,12 +126,12 @@ export function OrderQueueBoard({
       if (!window.confirm(`${current} already picked this order up. Reassign anyway?`)) return;
     }
     const driver = drivers.find((d) => d.id === driverId);
-    setAssignError(null);
+    setBoardError(null);
     setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, driverId: driverId ?? undefined, driver } : o)));
     const result = await assignOrderDriver(order.id, driverId);
     if ("error" in result) {
       setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, driverId: order.driverId, driver: order.driver } : o)));
-      setAssignError(result.error);
+      setBoardError(result.error);
     }
   }
 
@@ -142,7 +149,7 @@ export function OrderQueueBoard({
 
   return (
     <>
-      {assignError && <p className="mb-3 text-sm text-destructive">{assignError}</p>}
+      {boardError && <p className="mb-3 text-sm text-destructive">{boardError}</p>}
       {active.length === 0 ? (
         <p className="text-sm text-muted-foreground">No active orders right now — kitchen&apos;s clear.</p>
       ) : (

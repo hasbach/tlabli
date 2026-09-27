@@ -16,6 +16,7 @@ async function callDriverRpc(
   const { error } = await supabase.rpc(fn, { p_token: token, p_order_id: orderId });
   if (!error) return { ok: true };
   const code = KNOWN_CODES.find((c) => c === error.message) ?? "unknown";
+  if (code === "unknown") console.error(`${fn} failed:`, error.message);
   return { ok: false, code };
 }
 

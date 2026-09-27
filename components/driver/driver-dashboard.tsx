@@ -129,9 +129,18 @@ export function DriverDashboard({ token, result }: { token: string; result: Driv
               {t("driverGreeting")} {view.driverName}
             </h1>
           </div>
-          <Button size="sm" variant="outline" onClick={refresh} disabled={isRefreshing} className="shrink-0 gap-1.5">
-            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} /> {t("driverRefresh")}
-          </Button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            {view.restaurantPhone && (
+              <Button size="sm" variant="outline" asChild className="gap-1.5">
+                <a href={`tel:${view.restaurantPhone}`}>
+                  <Phone className="h-3.5 w-3.5" /> {t("driverCallRestaurant")}
+                </a>
+              </Button>
+            )}
+            <Button size="sm" variant="outline" onClick={refresh} disabled={isRefreshing} className="gap-1.5">
+              <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} /> {t("driverRefresh")}
+            </Button>
+          </div>
         </header>
 
         {availableLocales.length > 1 && (

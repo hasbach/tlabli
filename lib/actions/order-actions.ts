@@ -8,16 +8,20 @@ import type { Order, OrderStatus, OrderLineItem, Currency } from "@/lib/types";
 
 export type ActionResult<T> = { error: string } | { data: T };
 
-export async function advanceOrderStatus(orderId: string, nextStatus: OrderStatus): Promise<ActionResult<Order>> {
+export async function advanceOrderStatus(
+  orderId: string,
+  nextStatus: OrderStatus,
+  expectedStatus?: OrderStatus
+): Promise<ActionResult<Order>> {
   const supabase = createServerSupabaseClient();
-  const { data, error } = await supabase
-    .from("orders")
-    .update({ status: nextStatus })
-    .eq("id", orderId)
-    .select()
-    .single();
+  let query = supabase.from("orders").update({ status: nextStatus }).eq("id", orderId);
+  if (expectedStatus) query = query.eq("status", expectedStatus);
+  const { data, error } = await query.select().maybeSingle();
 
-  if (error || !data) return { error: error?.message ?? "Failed to update order" };
+  if (error) return { error: error.message };
+  if (!data) {
+    return { error: "This order was already updated — refresh to see its current status." };
+  }
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/orders");
   return { data: mapOrderRow(data) };
