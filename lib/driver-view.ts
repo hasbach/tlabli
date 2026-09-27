@@ -2,7 +2,7 @@
 // driver_get_orders SECURITY DEFINER RPC (supabase/sql/15_drivers.sql). The
 // token is the only credential — no session is involved.
 
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAnonSupabaseClient } from "@/lib/supabase/anon";
 import type { Currency, OrderLineItem, OrderStatus } from "@/lib/types";
 
 export interface DriverViewOrder {
@@ -30,9 +30,13 @@ export interface DriverView {
 export type DriverViewResult = { kind: "ok"; view: DriverView } | { kind: "invalid" } | { kind: "error" };
 
 export async function getDriverView(token: string): Promise<DriverViewResult> {
-  const supabase = createServerSupabaseClient();
+  const supabase = createAnonSupabaseClient();
   const { data, error } = await supabase.rpc("driver_get_orders", { p_token: token });
-  if (error) return error.message === "invalid_link" ? { kind: "invalid" } : { kind: "error" };
+  if (error) {
+    if (error.message === "invalid_link") return { kind: "invalid" };
+    console.error("driver_get_orders failed:", error.message);
+    return { kind: "error" };
+  }
 
   const json = data as {
     driver: { name: string };

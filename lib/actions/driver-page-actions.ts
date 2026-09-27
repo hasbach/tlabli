@@ -1,7 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAnonSupabaseClient } from "@/lib/supabase/anon";
 
 export type DriverActionCode = "invalid_link" | "not_assigned" | "bad_status" | "unknown";
 export type DriverActionResult = { ok: true } | { ok: false; code: DriverActionCode };
@@ -13,9 +12,8 @@ async function callDriverRpc(
   token: string,
   orderId: string
 ): Promise<DriverActionResult> {
-  const supabase = createServerSupabaseClient();
+  const supabase = createAnonSupabaseClient();
   const { error } = await supabase.rpc(fn, { p_token: token, p_order_id: orderId });
-  revalidatePath(`/driver/${token}`);
   if (!error) return { ok: true };
   const code = KNOWN_CODES.find((c) => c === error.message) ?? "unknown";
   return { ok: false, code };

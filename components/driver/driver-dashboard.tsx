@@ -2,12 +2,11 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { MapPin, Phone, RefreshCw, Truck } from "lucide-react";
+import { Languages, MapPin, Phone, RefreshCw, Truck } from "lucide-react";
 import type { Locale, OrderStatus } from "@/lib/types";
 import type { DriverViewOrder, DriverViewResult } from "@/lib/driver-view";
-import type { DictionaryKey } from "@/lib/i18n/dictionaries";
+import { localeMeta, type DictionaryKey } from "@/lib/i18n/dictionaries";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
-import { LanguageSwitcher } from "@/components/storefront/language-switcher";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,7 +31,7 @@ const ERROR_KEY: Record<DriverActionCode, DictionaryKey> = {
 
 export function DriverDashboard({ token, result }: { token: string; result: DriverViewResult }) {
   const router = useRouter();
-  const { t, locale, setLocale } = useLocale();
+  const { t, locale, setLocale, availableLocales } = useLocale();
   const [isRefreshing, startRefresh] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -40,6 +39,10 @@ export function DriverDashboard({ token, result }: { token: string; result: Driv
   const refresh = useCallback(() => startRefresh(() => router.refresh()), [router]);
 
   // Remember the driver's language on this phone (per-device convenience only).
+  // Persisting is done in chooseLocale (below), triggered only by a user click —
+  // not by a [locale]-keyed effect, which would misfire under React Strict
+  // Mode's double-invoke (it would write "en" on mount before the saved value
+  // loads, then re-read that "en" on the second pass).
   useEffect(() => {
     try {
       const saved = localStorage.getItem(LOCALE_STORAGE_KEY);
@@ -49,13 +52,14 @@ export function DriverDashboard({ token, result }: { token: string; result: Driv
     }
   }, [setLocale]);
 
-  useEffect(() => {
+  function chooseLocale(l: Locale) {
+    setLocale(l);
     try {
-      localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+      localStorage.setItem(LOCALE_STORAGE_KEY, l);
     } catch {
-      // Ignore — see above.
+      // Storage blocked (private mode) — the choice just won't survive reload.
     }
-  }, [locale]);
+  }
 
   // Poll instead of Realtime: the driver has no session, and we don't want to
   // build on the public orders read policy (a known gap).
@@ -72,10 +76,15 @@ export function DriverDashboard({ token, result }: { token: string; result: Driv
     if (kind === "delivered" && !window.confirm(`#${order.queueNumber} — ${t("driverConfirmDelivered")}`)) return;
     setPendingId(order.id);
     setMessage(null);
-    const res = kind === "picked_up" ? await markPickedUp(token, order.id) : await markDelivered(token, order.id);
-    setPendingId(null);
-    if (!res.ok) setMessage(t(ERROR_KEY[res.code]));
-    refresh();
+    try {
+      const res = kind === "picked_up" ? await markPickedUp(token, order.id) : await markDelivered(token, order.id);
+      if (!res.ok) setMessage(t(ERROR_KEY[res.code]));
+    } catch {
+      setMessage(t("driverUpdateFailed"));
+    } finally {
+      setPendingId(null);
+      refresh();
+    }
   }
 
   if (result.kind === "invalid") {
@@ -125,9 +134,23 @@ export function DriverDashboard({ token, result }: { token: string; result: Driv
           </Button>
         </header>
 
-        <div className="mb-4">
-          <LanguageSwitcher />
-        </div>
+        {availableLocales.length > 1 && (
+          <div className="mb-4 flex items-center gap-1 rounded-lg border border-border bg-card p-1 shadow-soft">
+            <Languages className="mx-1.5 h-4 w-4 text-muted-foreground" />
+            {availableLocales.map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => chooseLocale(l)}
+                className={`cursor-pointer rounded-md px-2 py-1 text-xs font-semibold transition-colors ${
+                  locale === l ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {localeMeta[l].label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {message && <p className="mb-3 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{message}</p>}
 
