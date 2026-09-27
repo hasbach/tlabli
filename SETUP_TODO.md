@@ -113,6 +113,17 @@ can run against a real database and send real WhatsApp orders.
    needed. Until this migration runs, the Logo upload will show a save
    error, but every storefront keeps showing its existing letter/icon
    fallback in the meantime.
+16. Also paste and run `supabase/sql/15_drivers.sql` — adds driver magic
+   links, driver assignment on delivery orders, and the
+   `order_driver_events` log. From `/dashboard/settings` → Drivers, owners
+   add each driver and send them their private link over WhatsApp (the link
+   is shown once; "Reset link" issues a new one and kills the old one). Delivery
+   orders in the queue then get a driver picker, and drivers mark orders
+   Picked up / Delivered at `/driver/<link>` — no account or password.
+   Optionally run `supabase/sql/tests/15_drivers_smoke.sql` afterwards: it
+   rolls itself back and should end with "drivers smoke test: all assertions
+   passed". Until the migration runs, adding a driver or assigning one shows a
+   save error, but everything else keeps working.
 
 ## 2. WhatsApp order notifications
 

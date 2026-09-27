@@ -59,6 +59,8 @@ Then open http://localhost:3000.
   own real restaurant
 - `/login` — email/password login; `/dashboard` and `/admin` redirect here if you're not signed in
 - `/order/o-1001` — customer-facing order status tracking page
+- `/driver/<token>` — a driver's private delivery page (magic link issued from
+  Settings → Drivers); shows only orders currently assigned to that driver
 - `/admin` — platform admin panel (all tenants, plan/status, manual billing)
 
 ## Project structure
@@ -71,6 +73,7 @@ components/
   storefront/             Cart, checkout, menu item card, language switcher, QR code
   templates/              The 4 menu template layouts (fast-food, bakery, fine-dining, cafe)
   dashboard/               Sidebar, stat cards, order queue, menu builder, analytics, settings, team
+  driver/                  Magic-link driver page UI
   admin/                   Platform admin: tenant table + manage-tenant sheet
 lib/
   types.ts                Data model (mirrors PROJECT_INSTRUCTIONS.md section 7)
