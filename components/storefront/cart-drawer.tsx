@@ -57,6 +57,13 @@ export function CartDrawer({
       addons: l.addons.map((a) => a.name),
     }));
 
+    // Chosen here rather than by the database so the tracking link can go in
+    // the WhatsApp message, which must open before createOrder returns (see
+    // below). Very old browsers without randomUUID just skip the link.
+    const orderId =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : undefined;
+    const trackingUrl = orderId ? `${window.location.origin}/order/${orderId}` : undefined;
+
     const message = buildWhatsAppOrderMessage(
       {
         items: orderItems,
@@ -68,7 +75,8 @@ export function CartDrawer({
         tableNumber,
         address,
       },
-      restaurantName
+      restaurantName,
+      trackingUrl
     );
 
     // Computed unconditionally (cheap, no side effects) so it's also
@@ -101,6 +109,7 @@ export function CartDrawer({
       items: orderItems,
       total: subtotal,
       currency,
+      id: orderId,
     });
     setSubmitting(false);
     if ("data" in result) {

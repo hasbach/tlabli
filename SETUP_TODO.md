@@ -131,6 +131,12 @@ can run against a real database and send real WhatsApp orders.
    restaurant as defence in depth. Re-run
    `supabase/sql/tests/15_drivers_smoke.sql` afterwards to confirm nothing
    regressed.
+18. Also paste and run `supabase/sql/17_client_order_id.sql` — lets checkout
+   pick the new order's id up front so the customer's WhatsApp order message
+   ends with a "Track order: …/order/<id>" link they can reopen from their
+   chat later. Run it before deploying the matching app code. If the code
+   deploys first, checkout still works (it retries without the id), but those
+   orders' tracking links point nowhere.
 
 ## 2. WhatsApp order notifications
 

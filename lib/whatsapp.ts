@@ -11,7 +11,8 @@ import type { Order } from "./types";
  */
 export function buildWhatsAppOrderMessage(
   order: Pick<Order, "items" | "total" | "currency" | "customerName" | "customerPhone" | "orderType" | "tableNumber" | "address">,
-  restaurantName: string
+  restaurantName: string,
+  trackingUrl?: string
 ): string {
   const lines = [
     `🔔 New order at ${restaurantName}`,
@@ -27,6 +28,8 @@ export function buildWhatsAppOrderMessage(
       : order.orderType === "delivery"
         ? `Delivery to: ${order.address ?? "-"}`
         : "Pickup",
+    // Stays in the customer's WhatsApp chat, so they can reopen tracking later.
+    ...(trackingUrl ? ["", `Track order: ${trackingUrl}`] : []),
   ];
   return lines.join("\n");
 }
