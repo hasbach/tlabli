@@ -1,5 +1,5 @@
 import type { BusinessHours } from "./types";
-import { BEIRUT_OFFSET_MS } from "./beirut-time";
+import { toBeirutWallClock } from "./beirut-time";
 
 const DAY_ORDER: BusinessHours["day"][] = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
@@ -7,31 +7,40 @@ const DAY_ORDER: BusinessHours["day"][] = ["sun", "mon", "tue", "wed", "thu", "f
  * Beirut wall-clock day-of-week and minutes-since-midnight for `date` — this
  * app serves exclusively Lebanese restaurants, so "what day/hour is it right
  * now" must never be read from the server process's local timezone (typically
- * UTC on Vercel and most hosts). Same fixed +3h shift as lib/beirut-time.ts.
+ * UTC on Vercel and most hosts). DST-aware via lib/beirut-time.ts.
  */
-function beirutDayAndMinutes(date: Date): { day: BusinessHours["day"]; minutes: number } {
-  const shifted = new Date(date.getTime() + BEIRUT_OFFSET_MS);
+function beirutDayAndMinutes(date: Date): { dayIndex: number; minutes: number } {
+  const shifted = toBeirutWallClock(date);
   return {
-    day: DAY_ORDER[shifted.getUTCDay()],
+    dayIndex: shifted.getUTCDay(),
     minutes: shifted.getUTCHours() * 60 + shifted.getUTCMinutes(),
   };
 }
 
-/**
- * Pure function (no Date.now()) so it's safe in any rendering context —
- * pass in the current time explicitly (defaults to a fixed demo time when
- * omitted, since this repo has no live clock dependency yet).
- */
+function toMinutes(hhmm: string): number {
+  const [h, m] = hhmm.split(":").map(Number);
+  return h * 60 + m;
+}
+
+/** Whether the restaurant is open at `now` (defaults to the current time), in Beirut time. */
 export function isOpenNow(hours: BusinessHours[], now: Date = new Date()): boolean {
-  const { day, minutes: current } = beirutDayAndMinutes(now);
-  const today = hours.find((h) => h.day === day);
-  if (!today || today.closed) return false;
-  const [openH, openM] = today.open.split(":").map(Number);
-  const [closeH, closeM] = today.close.split(":").map(Number);
-  const openMinutes = openH * 60 + openM;
-  let closeMinutes = closeH * 60 + closeM;
-  if (closeMinutes <= openMinutes) closeMinutes += 24 * 60; // crosses midnight
-  return current >= openMinutes && current <= closeMinutes;
+  const { dayIndex, minutes: current } = beirutDayAndMinutes(now);
+  const today = hours.find((h) => h.day === DAY_ORDER[dayIndex]);
+  const yesterday = hours.find((h) => h.day === DAY_ORDER[(dayIndex + 6) % 7]);
+
+  if (today && !today.closed) {
+    const open = toMinutes(today.open);
+    const close = toMinutes(today.close);
+    // close <= open means the shift runs past midnight into tomorrow.
+    if (close <= open ? current >= open : current >= open && current <= close) return true;
+  }
+  // Still inside yesterday's shift that ran past midnight (e.g. 18:00–02:00).
+  if (yesterday && !yesterday.closed) {
+    const open = toMinutes(yesterday.open);
+    const close = toMinutes(yesterday.close);
+    if (close <= open && current <= close) return true;
+  }
+  return false;
 }
 
 export function isItemInTimeWindow(availableFrom?: string, availableUntil?: string, now: Date = new Date()): boolean {
