@@ -46,7 +46,8 @@ export function isOpenNow(hours: BusinessHours[], now: Date = new Date()): boole
 export function isItemInTimeWindow(availableFrom?: string, availableUntil?: string, now: Date = new Date()): boolean {
   if (!availableFrom || !availableUntil) return true;
   const { minutes: current } = beirutDayAndMinutes(now);
-  const [fromH, fromM] = availableFrom.split(":").map(Number);
-  const [untilH, untilM] = availableUntil.split(":").map(Number);
-  return current >= fromH * 60 + fromM && current <= untilH * 60 + untilM;
+  const from = toMinutes(availableFrom);
+  const until = toMinutes(availableUntil);
+  // until < from means the window runs past midnight (e.g. 22:00–02:00).
+  return until < from ? current >= from || current <= until : current >= from && current <= until;
 }

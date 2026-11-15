@@ -6,15 +6,19 @@ import { formatMoney } from "@/lib/currency";
 import { useCart } from "@/components/storefront/cart-provider";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { localizedItemTitle, localizedItemDescription } from "@/lib/i18n/localized-menu-content";
+import { Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useItemInTimeWindow } from "@/components/storefront/use-item-in-time-window";
 
 export function FineDiningItemRow({ item, currency }: { item: MenuItem; currency: Currency }) {
   const { addLine } = useCart();
-  const { locale } = useLocale();
+  const { t, locale } = useLocale();
   const soldOut = !item.isAvailable;
+  const outsideWindow = !useItemInTimeWindow(item.availableFrom, item.availableUntil);
+  const unavailable = soldOut || outsideWindow;
 
   return (
-    <div className="flex items-start gap-3 border-b border-border/70 py-5 last:border-0" style={{ opacity: soldOut ? 0.5 : 1 }}>
+    <div className="flex items-start gap-3 border-b border-border/70 py-5 last:border-0" style={{ opacity: unavailable ? 0.5 : 1 }}>
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
           <h3 className="font-display text-lg tracking-wide">{localizedItemTitle(item, locale)}</h3>
@@ -32,8 +36,13 @@ export function FineDiningItemRow({ item, currency }: { item: MenuItem; currency
             Sold out
           </Badge>
         )}
+        {outsideWindow && !soldOut && (
+          <Badge variant="muted" className="mt-2 gap-1">
+            <Clock className="h-3 w-3" /> {t("notAvailableNow")} · {item.availableFrom}–{item.availableUntil}
+          </Badge>
+        )}
       </div>
-      {!soldOut && (
+      {!unavailable && (
         <button
           type="button"
           aria-label={`Add ${item.title} to order`}

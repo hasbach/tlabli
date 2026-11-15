@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useCart } from "./cart-provider";
+import { useItemInTimeWindow } from "./use-item-in-time-window";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { localizedItemTitle, localizedItemDescription, localizedAddonName } from "@/lib/i18n/localized-menu-content";
 
@@ -42,6 +43,9 @@ export function MenuItemCard({
 
   const isTimeWindowed = Boolean(item.availableFrom && item.availableUntil);
   const soldOut = !item.isAvailable;
+  const outsideWindow = !useItemInTimeWindow(item.availableFrom, item.availableUntil);
+  // Sold out, or a scheduled item outside its hours: shown greyed out, not orderable.
+  const unavailable = soldOut || outsideWindow;
   const title = localizedItemTitle(item, locale);
   const description = localizedItemDescription(item, locale);
 
@@ -50,7 +54,7 @@ export function MenuItemCard({
   }
 
   function handleAdd() {
-    if (soldOut) return;
+    if (unavailable) return;
     const key = [item.id, variant, ...selectedAddons.slice().sort()].filter(Boolean).join("|");
     addLine(
       {
@@ -78,12 +82,14 @@ export function MenuItemCard({
           {soldOut && <Badge variant="destructive">{t("soldOut")}</Badge>}
           {isTimeWindowed && !soldOut && (
             <Badge variant="muted" className="gap-1">
-              <Clock className="h-3 w-3" /> {item.availableFrom}–{item.availableUntil}
+              <Clock className="h-3 w-3" />
+              {outsideWindow && `${t("notAvailableNow")} · `}
+              {item.availableFrom}–{item.availableUntil}
             </Badge>
           )}
         </div>
 
-        {!soldOut && item.variants && item.variants.length > 0 && (
+        {!unavailable && item.variants && item.variants.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pt-1">
             {item.variants.map((v) => (
               <button
@@ -103,7 +109,7 @@ export function MenuItemCard({
           </div>
         )}
 
-        {!soldOut && item.addons.length > 0 && (
+        {!unavailable && item.addons.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pt-1">
             {item.addons.map((a) => (
               <button
@@ -125,7 +131,7 @@ export function MenuItemCard({
           </div>
         )}
 
-        {!soldOut && (
+        {!unavailable && (
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-2 rounded-lg border border-border">
               <button
@@ -173,7 +179,7 @@ export function MenuItemCard({
     <>
       <div
         className="group flex min-w-0 gap-4 rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-card"
-        style={{ opacity: soldOut ? 0.6 : 1 }}
+        style={{ opacity: unavailable ? 0.6 : 1 }}
       >
         <button
           type="button"
